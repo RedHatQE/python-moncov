@@ -66,7 +66,7 @@ class PyTracer(object):
                     self.cur_file_data[frame.f_lineno] = None
                     if self.cur_file_name.startswith("/") and self.db:
                         try:
-                            self.db.lines.insert({self.cur_file_name.replace(".", "<DOT>"): [frame.f_lineno]})
+                            self.db.lines.insert({"file": self.cur_file_name, "lines": [frame.f_lineno]})
                         except:
                             pass
 #                        sys.stderr.write("%s %d\n" % (self.cur_file_name, frame.f_lineno))
