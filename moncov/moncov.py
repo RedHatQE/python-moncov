@@ -18,8 +18,12 @@ class PyTracer(object):
         self.data_stack = []
         self.last_exc_back = None
         self.last_exc_firstlineno = 0
-        self.con = pymongo.connection.Connection(dbhost, dbport)
-        self.db = pymongo.database.Database(self.con, "coverage")
+        try:
+            self.con = pymongo.connection.Connection(dbhost, dbport)
+            self.db = pymongo.database.Database(self.con, "coverage")
+        except:
+            self.con = None
+            self.db = None
 
     def _trace(self, frame, event, arg_unused):
         """The trace function passed to sys.settrace."""
@@ -58,7 +62,7 @@ class PyTracer(object):
             if self.cur_file_data is not None:
                 if not frame.f_lineno in self.cur_file_data.keys():
                     self.cur_file_data[frame.f_lineno] = None
-                    if self.cur_file_name.startswith("/"):
+                    if self.cur_file_name.startswith("/") and self.db:
                         try:
                             self.db.lines.insert({self.cur_file_name.replace(".", "<DOT>"): [frame.f_lineno]})
                         except:
