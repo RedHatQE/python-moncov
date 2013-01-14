@@ -106,7 +106,6 @@ class Collector(object):
     # The stack of active Collectors.  Collectors are added here when started,
     # and popped when stopped.  Collectors on the stack are paused when not
     # the top, and resumed when they become the top again.
-    _collectors = []
 
     def __init__(self):
         self.tracers = []
@@ -152,10 +151,6 @@ class Collector(object):
 
     def start(self):
         """Start collecting trace information."""
-        if self._collectors:
-            self._collectors[-1].pause()
-        self._collectors.append(self)
-        #print("Started: %r" % self._collectors, file=sys.stderr)
 
         # Check to see whether we had a fullcoverage tracer installed.
         traces0 = []
