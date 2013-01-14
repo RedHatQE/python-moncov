@@ -1,6 +1,6 @@
 Name:		python-moncov
-Version:	0.1
-Release:	0%{?dist}
+Version:	0.2
+Release:	1%{?dist}
 Summary:	Python code coverage using MongoDB
 
 Group:		Development/Python
@@ -34,3 +34,6 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitelib}/moncov
 
 %changelog
+* Mon Jan 14 2013 Vitaly Kuznetsov <vitty@redhat.com> 0.2-1
+- new package built with tito
+
