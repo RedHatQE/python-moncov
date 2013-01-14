@@ -1,12 +1,10 @@
 """Raw data collector for Coverage."""
 
-import os
 import sys
 import re
 import threading
 import pymongo
 import yaml
-from distutils.sysconfig import get_python_lib
 
 class PyTracer(object):
 
@@ -129,7 +127,7 @@ class Collector(object):
             ignore = params["ignore"]
         except:
             pass
-        for pattern in ignore + [get_python_lib(0) + "/[^/]*$", get_python_lib(1) + "/[^/]*$", get_python_lib(0,1) + "/[^/]*$"]:
+        for pattern in ignore:
             self.ignore_re.append(re.compile(pattern))
 
 
