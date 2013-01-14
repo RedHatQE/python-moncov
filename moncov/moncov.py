@@ -60,7 +60,7 @@ class PyTracer(object):
         elif event == 'line':
             # Record an executed line.
             if self.cur_file_data is not None:
-                if not frame.f_lineno in self.cur_file_data.keys():
+                if not frame.f_lineno in self.cur_file_data:
                     self.cur_file_data[frame.f_lineno] = None
                     if self.cur_file_name.startswith("/") and self.db:
                         try:
