@@ -23,6 +23,7 @@ Python code coverage using MongoDB
 
 %install
 %{__python} setup.py install -O1 --root $RPM_BUILD_ROOT
+echo "import moncov; c = moncov.moncov.Collector(); c.start()" > %{buildroot}/%{python_sitelib}/z_moncov.pth
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -32,6 +33,7 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %attr(0644, root, root) %{_sysconfdir}/moncov.yaml
 %{python_sitelib}/*.egg-info
 %{python_sitelib}/moncov
+%{python_sitelib}/z_moncov.pth
 
 %changelog
 * Mon Jan 14 2013 Vitaly Kuznetsov <vitty@redhat.com> 0.2-1
