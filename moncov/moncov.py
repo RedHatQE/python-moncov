@@ -2,6 +2,7 @@
 
 import os
 import sys
+import re
 import threading
 import pymongo
 import yaml
@@ -9,7 +10,7 @@ from distutils.sysconfig import get_python_lib
 
 class PyTracer(object):
 
-    def __init__(self, dbhost="localhost", dbport=27017):
+    def __init__(self, dbhost="localhost", dbport=27017, ignore_re=[]):
         self.data = {}
         self.should_trace_cache = {}
         self.cur_file_data = None
@@ -18,6 +19,7 @@ class PyTracer(object):
         self.data_stack = []
         self.last_exc_back = None
         self.last_exc_firstlineno = 0
+        self.ignore_re = ignore_re
         try:
             self.con = pymongo.connection.Connection(dbhost, dbport)
             self.db = pymongo.database.Database(self.con, "coverage")
@@ -42,7 +44,7 @@ class PyTracer(object):
             filename = frame.f_code.co_filename
             tracename = self.should_trace_cache.get(filename)
             if tracename is None:
-                tracename = self.should_trace(filename, frame)
+                tracename = self.should_trace(filename)
                 self.should_trace_cache[filename] = tracename
             #print("called, stack is %d deep, tracename is %r" % (
             #               len(self.data_stack), tracename))
@@ -59,7 +61,7 @@ class PyTracer(object):
             self.last_line = -1
         elif event == 'line':
             # Record an executed line.
-            if self.cur_file_data is not None:
+            if self.cur_file_data is not None and self.cur_file_name:
                 if not frame.f_lineno in self.cur_file_data:
                     self.cur_file_data[frame.f_lineno] = None
                     if self.cur_file_name.startswith("/") and self.db:
@@ -95,8 +97,13 @@ class PyTracer(object):
         """Return a dictionary of statistics, or None."""
         return None
 
-    def should_trace(self, filename, frame):
-        if not os.path.dirname(filename) in [get_python_lib(0), get_python_lib(1), get_python_lib(0,1)]:
+    def should_trace(self, filename):
+        res = True
+        for regexp in self.ignore_re:
+            if regexp.match(filename):
+                res = False
+                break
+        if res:
             return filename
         else:
             return False
@@ -112,20 +119,26 @@ class Collector(object):
         self._trace_class = PyTracer
         self.dbhost = "localhost"
         self.dbport = 27017
+        ignore = []
+        self.ignore_re = []
         try:
             fd = open("/etc/moncov.yaml", "r")
             params = yaml.load(fd.read())
             self.dbhost = params["dbhost"]
             self.dbport = params["dbport"]
+            ignore = params["ignore"]
         except:
             pass
+        for pattern in ignore + [get_python_lib(0) + "/[^/]*$", get_python_lib(1) + "/[^/]*$", get_python_lib(0,1) + "/[^/]*$"]:
+            self.ignore_re.append(re.compile(pattern))
+
 
     def __repr__(self):
         return "<Collector at 0x%x>" % id(self)
 
     def _start_tracer(self):
         """Start a new Tracer object, and store it in self.tracers."""
-        tracer = PyTracer(self.dbhost, self.dbport)
+        tracer = PyTracer(self.dbhost, self.dbport, self.ignore_re)
         fn = tracer.start()
         self.tracers.append(tracer)
         return fn
