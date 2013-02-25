@@ -29,6 +29,7 @@ echo "import moncov; c = moncov.moncov.Collector(); c.start()" > %{buildroot}/%{
 rm -rf $RPM_BUILD_ROOT
 
 %files
+%doc COPYING
 %defattr(-,root,root,-)
 %config(noreplace) %attr(0644, root, root) %{_sysconfdir}/moncov.yaml
 %{python_sitelib}/*.egg-info
