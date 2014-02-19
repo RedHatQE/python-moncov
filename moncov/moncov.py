@@ -65,7 +65,7 @@ class PyTracer(object):
                     self.cur_file_data[frame.f_lineno] = None
                     if self.cur_file_name.startswith("/") and self.db:
                         try:
-                            self.db.lines.insert({"file": self.cur_file_name, "line": frame.f_lineno}, w=0)
+                            self.db.lines.update({"file": self.cur_file_name, "line": frame.f_lineno}, {"$setOnIsert": {}}, w=0, upsert=True)
                         except:
                             pass
 #                        sys.stderr.write("%s %d\n" % (self.cur_file_name, frame.f_lineno))
