@@ -20,7 +20,8 @@ class PyTracer(object):
         self.ignore_re = ignore_re
         try:
             self.con = pymongo.connection.Connection(dbhost, dbport)
-            self.db = pymongo.database.Database(self.con, "coverage")
+            self.db = pymongo.database.Database(self.con, "moncov")
+            self.db.lines.create_index([("file", pymongo.ASCENDING), ("line", pymongo.ASCENDING)], unique=True, drop_dups=True, sparse=True)
         except:
             self.con = None
             self.db = None
@@ -64,7 +65,7 @@ class PyTracer(object):
                     self.cur_file_data[frame.f_lineno] = None
                     if self.cur_file_name.startswith("/") and self.db:
                         try:
-                            self.db.lines.insert({"file": self.cur_file_name, "lines": [frame.f_lineno]})
+                            self.db.lines.insert({"file": self.cur_file_name, "line": frame.f_lineno}, w=0)
                         except:
                             pass
 #                        sys.stderr.write("%s %d\n" % (self.cur_file_name, frame.f_lineno))
