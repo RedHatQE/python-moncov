@@ -6,18 +6,14 @@ import threading
 import pymongo
 import yaml
 
-class PyTracer(object):
+_CACHE = {}
+_SHOULD_TRACE = {}
 
+class PyTracer(object):
     def __init__(self, dbhost="localhost", dbport=27017, ignore_re=[]):
-        self.data = {}
-        self.should_trace_cache = {}
-        self.cur_file_data = None
-        self.cur_file_name = None
-        self.last_line = 0
-        self.data_stack = []
-        self.last_exc_back = None
-        self.last_exc_firstlineno = 0
         self.ignore_re = ignore_re
+        self._cache = getattr(sys.modules[__name__], '_CACHE')
+        self._should_process = getattr(sys.modules[__name__], '_SHOULD_TRACE')
         try:
             self.con = pymongo.connection.Connection(dbhost, dbport)
             self.db = pymongo.database.Database(self.con, "moncov")
@@ -25,87 +21,64 @@ class PyTracer(object):
         except:
             self.con = None
             self.db = None
+            self.enabled = False
+        else:
+            self.enabled = True
 
     def _trace(self, frame, event, arg_unused):
         """The trace function passed to sys.settrace."""
+        # reentrance not allowed
+        if not self.enabled or not self.db:
+            return self._trace
 
-#        sys.stderr.write("trace event: %s %r @%d\n" % (event, frame.f_code.co_filename, frame.f_lineno))
+        if event != 'line':
+            # oly care about line events
+            return self._trace
 
-        if self.last_exc_back:
-            if frame == self.last_exc_back:
-                self.cur_file_data, self.last_line = self.data_stack.pop()
-            self.last_exc_back = None
+        filename, lineno = frame.f_code.co_filename, frame.f_lineno
 
-        if event == 'call':
-            # Entering a new function context.  Decide if we should trace
-            # in this file.
-            self.data_stack.append((self.cur_file_data, self.cur_file_name, self.last_line))
-            filename = frame.f_code.co_filename
-            tracename = self.should_trace_cache.get(filename)
-            if tracename is None:
-                tracename = self.should_trace(filename)
-                self.should_trace_cache[filename] = tracename
-            #print("called, stack is %d deep, tracename is %r" % (
-            #               len(self.data_stack), tracename))
-            if tracename:
-                if tracename not in self.data:
-                    self.data[tracename] = {}
-                self.cur_file_data = self.data[tracename]
-                self.cur_file_name = tracename
-            else:
-                self.cur_file_data = None
-                self.cur_file_name = None
-            # Set the last_line to -1 because the next arc will be entering a
-            # code block, indicated by (-1, n).
-            self.last_line = -1
-        elif event == 'line':
-            # Record an executed line.
-            if self.cur_file_data is not None and self.cur_file_name:
-                if not frame.f_lineno in self.cur_file_data:
-                    self.cur_file_data[frame.f_lineno] = None
-                    if self.cur_file_name.startswith("/") and self.db:
-                        try:
-                            self.db.lines.update({"file": self.cur_file_name, "line": frame.f_lineno}, {"$setOnIsert": {}}, w=0, upsert=True)
-                        except:
-                            pass
-#                        sys.stderr.write("%s %d\n" % (self.cur_file_name, frame.f_lineno))
-            self.last_line = frame.f_lineno
-        elif event == 'return':
-            self.cur_file_data, self.cur_file_name, self.last_line = self.data_stack.pop()
-            #print("returned, stack is %d deep" % (len(self.data_stack)))
-        elif event == 'exception':
-            #print("exc", self.last_line, frame.f_lineno)
-            self.last_exc_back = frame.f_back
-            self.last_exc_firstlineno = frame.f_code.co_firstlineno
+        # needs processing?
+        if filename not in self._should_process:
+            # on black list?
+            self.enabled = False # causes a call --- mask out
+            self._should_process[filename] = not any([regexp.match(filename) for regexp in self.ignore_re])
+            self.enabled = True
+
+        if not self._should_process[filename]:
+            return self._trace
+
+        if (filename, lineno) in self._cache:
+            # already reported --- don't care
+            return self._trace
+
+        # not yet collected
+        try:
+            self.enabled = False # causes a call
+            self.db.lines.update({"file": filename, "line": lineno}, {'$setOnInsert': {}}, upsert=True, w=0)
+        except:
+            pass
+        else:
+            # remote cache synced; avoid reporting same (file, line) again
+            self._cache[(filename, lineno)] = True
+        finally:
+            self.enabled = True
+
         return self._trace
 
     def start(self):
-        """Start this Tracer.
-
-        Return a Python function suitable for use with sys.settrace().
-
-        """
+        """Start this Tracer."""
+        self.enabled = True
         sys.settrace(self._trace)
         return self._trace
 
     def stop(self):
         """Stop this Tracer."""
+        self.enabled = False
         sys.settrace(None)
 
     def get_stats(self):
         """Return a dictionary of statistics, or None."""
         return None
-
-    def should_trace(self, filename):
-        res = True
-        for regexp in self.ignore_re:
-            if regexp.match(filename):
-                res = False
-                break
-        if res:
-            return filename
-        else:
-            return False
 
 
 class Collector(object):
