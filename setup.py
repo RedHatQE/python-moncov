@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from setuptools import setup
-import glob
+import glob, os
 
 setup(name='moncov',
     version='0.2',
@@ -14,7 +14,8 @@ setup(name='moncov',
         'moncov'
         ],
     data_files=[
-        ('/etc', ['etc/moncov.yaml'])
+        ('/etc', ['etc/moncov.yaml']),
+        ('/usr/lib/systemd/system', ['lib/systemd/system/moncov.service'])
     ],
     classifiers=[
             'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
