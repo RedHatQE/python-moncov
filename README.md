@@ -10,6 +10,4 @@ Usage
 * systemctl start moncov.service
 * python \<test.py\>
 * systemctl stop moncov.service
-* mongo
-* use moncov
-* db.lines.find()
+* python misc/simple_stats.py | grep moncov
