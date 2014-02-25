@@ -43,11 +43,7 @@ for doc in cursor_grouped['result']:
         print "...has syntax errors: %s" % e.message
 	continue
     hit_lines = set(map(lambda number: int(number), doc['lines']))
-    total_set = reduce( \
-        lambda result, x: result | set([x.lineno]), \
-        filter(lambda x: hasattr(x, "lineno"), ast.walk(tree)), \
-        set() \
-    )
+    total_set = set([x.lineno for x in ast.walk(tree) if hasattr(x, 'lineno')])
     total = len(total_set)
     hits = len(total_set & hit_lines)
     if total == 0:
