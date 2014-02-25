@@ -2,9 +2,26 @@
 
 import pymongo
 import ast
+import sys
+import yaml
 
+try:
+    with open('/etc/moncov.yaml') as fd:
+        config = yaml.load(fd.read())
+except Exception as e:
+    print "# can't read config file /etc/moncov.yaml: %s" % e.message
+    print "# using default config"
+    config = {}
 
-connection=pymongo.connection.Connection()
+host = config.get('dbhost', 'localhost')
+port = config.get('dbport', 27017)
+
+try:
+    connection=pymongo.connection.Connection(host=host, port=port)
+except Exception as e:
+    print "# connection error: %s" % e.message
+    sys.exit(2)
+
 db=pymongo.database.Database(connection, "moncov")
 cursor=list(db.lines.find())
 cursor_grouped = db.lines.aggregate([{"$group": {"_id": "$file", "lines": {"$addToSet": "$line"}}}])
@@ -17,7 +34,7 @@ for doc in cursor_grouped['result']:
         continue
     try:
         with open(filename) as fd:
-            src = fd.read() 
+            src = fd.read()
     except Exception as e:
         print "...can't read file: %s" % e.message
         continue
