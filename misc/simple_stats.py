@@ -42,13 +42,15 @@ for doc in cursor_grouped['result']:
     except Exception as e:
         print "...has syntax errors: %s" % e.message
 	continue
-    lines = set(map(lambda number: int(number), doc['lines']))
-    total, hits = reduce( \
-        lambda r, x: (r[0] + 1, r[1] + (x.lineno in lines and 1 or 0)), \
+    hit_lines = set(map(lambda number: int(number), doc['lines']))
+    total_set = reduce( \
+        lambda result, x: result | set([x.lineno]), \
         filter(lambda x: hasattr(x, "lineno"), ast.walk(tree)), \
-        (0, 0) \
+        set() \
     )
+    total = len(total_set)
+    hits = len(total_set & hit_lines)
     if total == 0:
         print "...empty"
         continue
-    print ": %1.2f" % (float(hits)/float(total))
+    print ": %1.2f (%s/%s)" % (float(hits)/float(total), hits, total)
