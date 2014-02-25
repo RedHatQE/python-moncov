@@ -23,7 +23,6 @@ except Exception as e:
     sys.exit(2)
 
 db=pymongo.database.Database(connection, "moncov")
-cursor=list(db.lines.find())
 cursor_grouped = db.lines.aggregate([{"$group": {"_id": "$file", "lines": {"$addToSet": "$line"}}}])
 
 for doc in cursor_grouped['result']:
