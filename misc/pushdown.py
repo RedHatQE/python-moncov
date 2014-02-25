@@ -59,11 +59,15 @@ TBL = {
 class PushDownAutomaton(object):
 
     # by default, use `lambda event, stack_event: None' callbacks for any event
-    def __init__(self, stack=[BTT], callbacks=collections.defaultdict(lambda: lambda event, stack_event: None)):
+    def __init__(self, stack=None, callbacks=collections.defaultdict(lambda: lambda event, stack_event: None)):
+        if stack is None:
+            stack = [BTT]
         self.reset(stack)
         self.callbacks = callbacks
 
-    def reset(self, stack=[BTT]):
+    def reset(self, stack=None):
+        if stack is None:
+            stack = [BTT]
         self.stack = stack
 
     def __repr__(self):
