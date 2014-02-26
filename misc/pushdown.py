@@ -1,6 +1,7 @@
 #!/usr/bin/pytho
 import ast
 import collections
+import sys
 
 # *_[EX] events: Enter eXit
 M_E = 'M_E' # Module
@@ -84,6 +85,7 @@ class PushDownAutomaton(object):
 
 
 class Line(object):
+    prefix = ""
     def __init__(self, node):
         self.node = node
 
@@ -92,7 +94,7 @@ class Line(object):
         print self
 
     def __str__(self):
-        return type(self).__name__ + ": %s" % self.node.lineno
+        return self.prefix + type(self).__name__ + ": %s" % self.node.lineno
 
     def __call__(self, node):
         '''print line in case node linenos differ; update self.node'''
@@ -108,13 +110,34 @@ class Line(object):
            print self
 
 class ModuleLine(Line):
-    pass
+    prefix = " "
 
 class ClassLine(Line):
-    pass
+    prefix = "   "
 
 class MethodLine(Line):
-    pass
+    prefix = "    "
+
+class LineStatus(object):
+    def __init__(self):
+        self.set_stack = []
+
+    @property
+    def top_set(self):
+        return self.set_stack[-1]
+
+    @top_set.setter
+    def top_set(self, other):
+        self.set_stack[-1] = other
+
+    def push_set(self):
+        self.set_stack.append(set())
+
+    def pop_set(self):
+        return self.set_stack.pop()
+
+    def add_line(self, lineno):
+        self.top_set.add(lineno)
 
 class Visitor(ast.NodeVisitor):
 
@@ -134,6 +157,7 @@ class Visitor(ast.NodeVisitor):
         self.node = None
         self.line = None
         self.pda = PushDownAutomaton(callbacks=self.callbacks)
+        self.line_status = LineStatus()
         super(Visitor, self).__init__(*args, **kvs)
         
     def visit_Module(self, node):
@@ -152,72 +176,49 @@ class Visitor(ast.NodeVisitor):
         self.pda(events[1])
 
     def line_handler(self, event, stack_event):
-        if self.line is not None:
-            self.line(self.node)
+        self.line(self.node)
+        if hasattr(self.node, 'lineno'):
+            self.line_status.add_line(self.node.lineno)
 
     def init_module(self, event, stack_event):
+        print "Module:"
+        self.line_status.push_set()
         self.line = ModuleLine(self.node)
 
     def exit_module(self, event, stack_event):
+        line_set = self.line_status.pop_set()
+        print "...total module lines: %s" % len(line_set)
         self.line(self.node)
 
     def init_class(self, event, stack_event):
+        print " Class: %s" % self.node.lineno
+        self.line_status.push_set()
         self.line = ClassLine(self.node)
 
     def exit_class(self, event, stack_event):
+        line_set = self.line_status.pop_set()
+        print " ...total class lines: %s" % len(line_set)
         self.line = ModuleLine(self.node)
 
     def init_method(self, event, stack_event):
+        print "  Method: %s" % self.node.lineno
+        self.line_status.push_set()
+        self.lines = 0
         self.line = MethodLine(self.node)
 
     def exit_method(self, event, stack_event):
+        line_set = self.line_status.pop_set()
+        print "  ...total method lines: %s" % len(line_set)
         self.line = ClassLine(self.node)
 
 
 ###
-src = \
-'''
-import yaml
-
-print "Hello, world!"
-
-def my_func(some, args):
-    pass
-
-def parent_func(what, ever, args):
-    """some doc string"""
-    def baby_func():
-        pass
-
-class MyClass(object):
-    class ANestedClass(object):
-        def __init__(self):
-            pass
-        def complex_m(self):
-            def inner():
-                pass
-            class Burried(object):
-               pass
-    def __init__(self):
-        print "Ahoj"
-        print "Ahoj me"
-
-    @classmethod
-    def zoo_metdhod(cls):
-        def chicken_method():
-            def egg_method(*args, **kvs):
-                pass
-            egg_method(yolk='yellow')
-        chicken_method()
-
-print "Good Bye!"
-
-class Foo(object):
-    mcls = MyClass()
-
-print "Really, Good Bye!"
-
-'''
+try:
+    with open("sample.py") as fd:
+        src = fd.read()
+except Exception as e:
+    print "Can't read sample.py: %s" % e.message
+    sys.exit(2)
 
 tree = ast.parse(src)
 print src
