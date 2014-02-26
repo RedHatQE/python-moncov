@@ -3,26 +3,16 @@
 import pymongo
 import ast
 import sys
-import yaml
+import moncov
+
 
 try:
-    with open('/etc/moncov.yaml') as fd:
-        config = yaml.load(fd.read())
-except Exception as e:
-    print "# can't read config file /etc/moncov.yaml: %s" % e.message
-    print "# using default config"
-    config = {}
-
-host = config.get('dbhost', 'localhost')
-port = config.get('dbport', 27017)
-
-try:
-    connection=pymongo.connection.Connection(host=host, port=port)
+    connection=pymongo.connection.Connection(host=moncov.conf.DBHOST, port=moncov.conf.DBPORT)
 except Exception as e:
     print "# connection error: %s" % e.message
     sys.exit(2)
 
-db=pymongo.database.Database(connection, "moncov")
+db=pymongo.database.Database(connection, moncov.conf.DBNAME)
 cursor_grouped = db.lines.aggregate([{"$group": {"_id": "$file", "lines": {"$addToSet": "$line"}}}])
 
 for doc in cursor_grouped['result']:
