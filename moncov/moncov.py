@@ -44,8 +44,8 @@ class PyTracer(object):
             # on black list?
             self.enabled = False # causes a call --- mask out
             self._should_process[filename] = \
-                not any([regexp.match(filename) for regexp in self.blacklist]) and \
-                any([regexp.match(filename) for regexp in self.whitelist])
+                any([regexp.match(filename) for regexp in self.whitelist]) and \
+                not any([regexp.match(filename) for regexp in self.blacklist])
             self.enabled = True
 
         if not self._should_process[filename]:
