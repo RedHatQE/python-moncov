@@ -1,4 +1,5 @@
 dbhost: localhost
 dbport: 27017
-ignore: ['/usr/(lib|lib64)/python[^/]*/(site-packages/|)(distutils|pymongo|yum|rpmUtils)/.*', /usr/bin/yum,
+blacklist: ['/usr/(lib|lib64)/python[^/]*/(site-packages/|)(distutils|pymongo|yum|rpmUtils)/.*', /usr/bin/yum,
   /usr/lib/yum-plugins/.*, /usr/share/yum-cli/.*, '/usr/(lib|lib64)/python[^/]*/(site-packages/|)[^/]*$']
+whitelist: ['.*']
