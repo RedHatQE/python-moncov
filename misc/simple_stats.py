@@ -5,6 +5,9 @@ import ast
 import sys
 import moncov
 
+# prevent tracing ourselves
+moncov.ctl.disable()
+
 
 try:
     connection=pymongo.connection.Connection(host=moncov.conf.DBHOST, port=moncov.conf.DBPORT)
