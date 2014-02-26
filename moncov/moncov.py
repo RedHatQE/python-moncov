@@ -5,18 +5,20 @@ import re
 import threading
 import pymongo
 import yaml
+import conf
 
 _CACHE = {}
 _SHOULD_TRACE = {}
 
 class PyTracer(object):
-    def __init__(self, dbhost="localhost", dbport=27017, ignore_re=[]):
-        self.ignore_re = ignore_re
+    def __init__(self, dbhost="localhost", dbport=27017, dbname='moncov', blacklist=[], whitelist=[]):
+        self.blacklist = blacklist
+        self.whitelist = whitelist
         self._cache = getattr(sys.modules[__name__], '_CACHE')
         self._should_process = getattr(sys.modules[__name__], '_SHOULD_TRACE')
         try:
             self.con = pymongo.connection.Connection(dbhost, dbport)
-            self.db = pymongo.database.Database(self.con, "moncov")
+            self.db = pymongo.database.Database(self.con, dbname)
             self.db.lines.create_index([("file", pymongo.ASCENDING), ("line", pymongo.ASCENDING)], unique=True, drop_dups=True, sparse=True)
         except:
             self.con = None
@@ -41,7 +43,9 @@ class PyTracer(object):
         if filename not in self._should_process:
             # on black list?
             self.enabled = False # causes a call --- mask out
-            self._should_process[filename] = not any([regexp.match(filename) for regexp in self.ignore_re])
+            self._should_process[filename] = \
+                not any([regexp.match(filename) for regexp in self.blacklist]) and \
+                any([regexp.match(filename) for regexp in self.whitelist])
             self.enabled = True
 
         if not self._should_process[filename]:
@@ -89,20 +93,12 @@ class Collector(object):
     def __init__(self):
         self.tracers = []
         self._trace_class = PyTracer
-        self.dbhost = "localhost"
-        self.dbport = 27017
-        ignore = []
-        self.ignore_re = []
-        try:
-            fd = open("/etc/moncov.yaml", "r")
-            params = yaml.load(fd.read())
-            self.dbhost = params["dbhost"]
-            self.dbport = params["dbport"]
-            ignore = params["ignore"]
-        except:
-            pass
-        for pattern in ignore:
-            self.ignore_re.append(re.compile(pattern))
+        from conf import (DBHOST, DBPORT, DBNAME, BLACKLIST, WHITELIST)
+        self.dbhost = DBHOST
+        self.dbport = DBPORT
+        self.dbname = DBNAME
+        self.blacklist = BLACKLIST
+        self.whitelist = WHITELIST
 
 
     def __repr__(self):
@@ -110,7 +106,7 @@ class Collector(object):
 
     def _start_tracer(self):
         """Start a new Tracer object, and store it in self.tracers."""
-        tracer = PyTracer(self.dbhost, self.dbport, self.ignore_re)
+        tracer = PyTracer(self.dbhost, self.dbport, self.dbname, self.blacklist, self.whitelist)
         fn = tracer.start()
         self.tracers.append(tracer)
         return fn
