@@ -1,5 +1,5 @@
 Name:		python-moncov
-Version:	0.3
+Version:	0.4
 Release:	1%{?dist}
 Summary:	Python code coverage using MongoDB
 
@@ -56,6 +56,11 @@ fi
 %{python_sitelib}/moncov
 
 %changelog
+* Wed Feb 26 2014 dparalen <vetrisko@gmail.com> 0.4-1
+- Automatic commit of package [python-moncov] release [0.3-1].
+  (vetrisko@gmail.com)
+- Update README.md (vetrisko@gmail.com)
+
 * Wed Feb 26 2014 dparalen <vetrisko@gmail.com> 0.3-1
 - fix: import (vetrisko@gmail.com)
 - fix: lazy eval (vetrisko@gmail.com)
