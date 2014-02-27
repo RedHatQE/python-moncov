@@ -191,7 +191,7 @@ class Visitor(ast.NodeVisitor):
         self.line(self.node)
 
     def init_class(self, event, stack_event):
-        print " Class: %s" % self.node.lineno
+        print " Class: %s at %s" % (self.node.name, self.node.lineno)
         self.line_status.push_set()
         self.line = ClassLine(self.node)
 
@@ -201,7 +201,7 @@ class Visitor(ast.NodeVisitor):
         self.line = ModuleLine(self.node)
 
     def init_method(self, event, stack_event):
-        print "  Method: %s" % self.node.lineno
+        print "  Method: %s at %s" % (self.node.name, self.node.lineno)
         self.line_status.push_set()
         self.lines = 0
         self.line = MethodLine(self.node)
