@@ -3,6 +3,7 @@
 import sys
 import threading
 import conf
+import re
 from tracer import PyTracer
 
 
