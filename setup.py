@@ -12,7 +12,8 @@ setup(name='moncov',
     license="GPLv3+",
     install_requires=['pymongo', 'cement'],
     packages=[
-        'moncov'
+        'moncov',
+        'moncov/stats'
         ],
     scripts=['bin/moncov'],
     data_files=[

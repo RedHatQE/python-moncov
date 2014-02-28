@@ -32,3 +32,19 @@ def get_connection(host=DBHOST, port=DBPORT):
 
 def get_db(host=DBHOST, port=DBHOST, name=DBNAME):
     return pymongo.database.Database(get_connection(host, port), name)
+
+def get_relist(relist):
+    if type(relist) is not list:
+        relist = relist.split(',')
+    return [re.compile(item) for item in relist]
+
+def get_whitelist(whitelist=None):
+    if whitelist is None:
+        return WHITELIST
+    return get_relist(whitelist)
+
+
+def get_blacklist(blacklist=None):
+    if blacklist is None:
+        return BLACKLIST
+    return get_relist(blacklist)

@@ -54,6 +54,7 @@ fi
 %config(noreplace) %attr(0640, root, root) %{_unitdir}/moncov.service
 %{python_sitelib}/*.egg-info
 %{python_sitelib}/moncov
+%{python_sitelib}/moncov/stats
 %{_bindir}/moncov
 
 %changelog
