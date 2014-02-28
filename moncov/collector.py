@@ -18,8 +18,8 @@ class Collector(object):
         self.dbhost = host or DBHOST
         self.dbport = port or DBPORT
         self.dbname = name or DBNAME
-        self.blacklist = blacklist or BLACKLIST
-        self.whitelist = whitelist or WHITELIST
+        self.blacklist = [re.compile(regexp) for regexp in blacklist] or BLACKLIST
+        self.whitelist = [re.compile(regexp) for regexp in whitelist] or WHITELIST
 
 
     def __repr__(self):
