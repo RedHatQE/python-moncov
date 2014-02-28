@@ -42,7 +42,7 @@ def sys_enable(db=None, host=conf.DBHOST, port=conf.DBPORT, name=conf.DBNAME, wh
     if db is not None:
         # convert to connection/port/name
         host, port, name = db.connection.host, db.connection.port, db.connection.name
-    code = get_collecting_code(host, port, name)
+    code = get_collecting_code(host, port, name, whitelist, blacklist)
     log.debug("code to use: %r" % code)
     import os
     import site
