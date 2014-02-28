@@ -11,4 +11,4 @@ Usage
 * systemctl start moncov.service
 * python misc/sample.py
 * systemctl stop moncov.service
-* python misc/simple_stats.py | grep sample
+* moncov stats simple | grep sample
