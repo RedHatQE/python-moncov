@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from cement.core import (foundation, controller, handler)
 import moncov
 
