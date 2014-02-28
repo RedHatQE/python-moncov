@@ -30,7 +30,7 @@ except Exception as e:
 def get_connection(host=DBHOST, port=DBPORT):
     return pymongo.connection.Connection(host, port)
 
-def get_db(host=DBHOST, port=DBHOST, name=DBNAME):
+def get_db(host=DBHOST, port=DBPORT, name=DBNAME):
     return pymongo.database.Database(get_connection(host, port), name)
 
 def get_relist(relist):
