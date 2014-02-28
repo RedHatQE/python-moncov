@@ -3,8 +3,8 @@ Description=collect coverage statistics in a (remote) MongoDb
 Requires=system.network
 
 [Service]
-ExecStart=/bin/moncov ctl sys-enable
-ExecStop=/bin/moncov ctl sys-disable
+ExecStart=/bin/bash -c 'HOME=/ moncov ctl sys-enable'
+ExecStop=/bin/bash -c 'HOME=/ moncov ctl sys-disable'
 TimeoutSec=1
 RemainAfterExit=true
 Type=oneshot
