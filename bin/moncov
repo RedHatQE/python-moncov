@@ -101,7 +101,8 @@ class BA(A):
 
     @controller.expose(help='simple')
     def simple(self):
-        print "simple"
+        db = moncov.conf.get_db(host=self.app.pargs.dbhost, port=self.app.pargs.dbport, name=self.app.pargs.dbname)
+        moncov.stats.simple.print_stats(db=db, whitelist=self.app.pargs.whitelist, blacklist=self.app.pargs.blacklist)
 
 class BB(A):
     class Meta:
