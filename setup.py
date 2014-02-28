@@ -14,6 +14,7 @@ setup(name='moncov',
     packages=[
         'moncov'
         ],
+    scripts=['bin/moncov.py'],
     data_files=[
         ('/etc', ['etc/moncov.yaml']),
         ('/usr/lib/systemd/system', ['lib/systemd/system/moncov.service'])
