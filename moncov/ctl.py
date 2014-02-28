@@ -32,12 +32,12 @@ def drop(db=None, host=conf.DBHOST, port=conf.DBPORT, name=conf.DBNAME):
         else:
             log.info("dropped: %r" % db)
 
-def get_collecting_code(host, port, name):
+def get_collecting_code(host, port, name, whitelist, blacklist):
     '''return the code to use for coverage collecting initialization from a pth file'''
-    return 'import moncov; c = moncov.Collector(host=%r, port=%r, name=%r); c.start()\n' % \
-        (host, port, name)
+    return 'import moncov; import re; c = moncov.Collector(host=%r, port=%r, name=%r, whitelist=%r, blacklist=%r); c.start()\n' % \
+        (host, port, name, [regexp.pattern for regexp in whitelist], [regexp.pattern for regexp in blacklist])
 
-def sys_enable(db=None, host=conf.DBHOST, port=conf.DBPORT, name=conf.DBNAME):
+def sys_enable(db=None, host=conf.DBHOST, port=conf.DBPORT, name=conf.DBNAME, whitelist=conf.WHITELIST, blacklist=conf.BLACKLIST):
     '''enable system-wide coverage stats collecting; requires permissions'''
     if db is not None:
         # convert to connection/port/name
@@ -47,6 +47,7 @@ def sys_enable(db=None, host=conf.DBHOST, port=conf.DBPORT, name=conf.DBNAME):
     import os
     import site
     logging.basicConfig()
+    # FIXME: implement with setup??
     filename = os.path.join(site.getsitepackages()[1], SITE_FILENAME)
     try:
         with open(filename, 'w+') as fd:
@@ -62,6 +63,7 @@ def sys_disable(*args, **kvs):
     import os
     logging.basicConfig()
     filename = os.path.join(site.getsitepackages()[1], SITE_FILENAME)
+    # FIXME: implement with setup??
     try:
         os.unlink(filename)
     except Exception as e:
