@@ -34,18 +34,21 @@ def drop(db=None, host=conf.DBHOST, port=conf.DBPORT, name=conf.DBNAME):
 
 def get_collecting_code(host, port, name, whitelist, blacklist):
     '''return the code to use for coverage collecting initialization from a pth file'''
+    whitelist = map(lambda regexp: type(regexp) is str and regexp or regexp.pattern, whitelist)
+    blacklist = map(lambda regexp: type(regexp) is str and regexp or regexp.pattern, blacklist)
     return 'import moncov; import re; c = moncov.Collector(host=%r, port=%r, name=%r, whitelist=%r, blacklist=%r); c.start()\n' % \
-        (host, port, name, [regexp.pattern for regexp in whitelist], [regexp.pattern for regexp in blacklist])
+        (host, port, name, whitelist, blacklist)
 
 def sys_enable(db=None, host=conf.DBHOST, port=conf.DBPORT, name=conf.DBNAME, whitelist=conf.WHITELIST, blacklist=conf.BLACKLIST):
     '''enable system-wide coverage stats collecting; requires permissions'''
     if db is not None:
         # convert to connection/port/name
         host, port, name = db.connection.host, db.connection.port, db.connection.name
-    code = get_collecting_code(host, port, name, whitelist, blacklist)
+    code = get_collecting_code(host, port, name, whitelist, blacklist) 
     log.debug("code to use: %r" % code)
     import os
     import site
+    import re
     logging.basicConfig()
     # FIXME: implement with setup??
     filename = os.path.join(site.getsitepackages()[1], SITE_FILENAME)

@@ -73,8 +73,15 @@ class CA(A):
     @controller.expose(help='enable system-wide coverage stats collecting')
     def sys_enable(self):
         # FIXME the .split(',') might break the regexp passed
+        whitelist = self.app.pargs.whitelist
+        blacklist = self.app.pargs.blacklist
+        # default used?
+        if type(whitelist) is not list:
+            whitelist = whitelist.split(',')
+        if type(blacklist) is not list:
+            blacklist = blacklist.split(',')
         moncov.ctl.sys_enable(host=self.app.pargs.dbhost, port=self.app.pargs.dbport, name=self.app.pargs.dbname,
-                                whitelist=self.app.pargs.whitelist.split(','), blacklist=self.app.pargs.blacklist.split(','))
+                                whitelist=whitelist, blacklist=blacklist)
 
     @controller.expose(help='disable system-wide coverage stats collecting')
     def sys_disable(self):
