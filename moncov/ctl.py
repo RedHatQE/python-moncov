@@ -26,7 +26,7 @@ def drop(db=None, host=conf.DBHOST, port=conf.DBPORT, name=conf.DBNAME):
         log.warning("couldn't get db %r, %r, %r: %r" % (host, port, name, e.message))
     else:
         try:
-            db.drop_collection(db.name)
+            db.connection.drop_database(db)
         except Exception as e:
             log.warning('failed to drop %r: %r' % (db, e.message))
         else:
