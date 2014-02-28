@@ -16,7 +16,9 @@ class A(controller.CementBaseController):
         arguments = [
             (['-a', '--dbhost'], dict(help='Host name of the MongoDB to use', default=moncov.conf.DBHOST)),
             (['-b', '--dbport'], dict(help='Port of the MongoDB service', type=int, default=moncov.conf.DBPORT)),
-            (['-c', '--dbname'], dict(help='Name of the db to collect stats in', default=moncov.conf.DBNAME))
+            (['-c', '--dbname'], dict(help='Name of the db to collect stats in', default=moncov.conf.DBNAME)),
+            (['-e', '--whitelist'], dict(help='coma-separated list of filter regexps; do not use coma-literals', default=moncov.conf.WHITELIST)),
+            (['-f', '--blacklist'], dict(help='coma-separated list of filter regexps; do not use coma-literals', default=moncov.conf.BLACKLIST))
         ]
         
 
@@ -70,7 +72,9 @@ class CA(A):
 
     @controller.expose(help='enable system-wide coverage stats collecting')
     def sys_enable(self):
-        moncov.ctl.sys_enable(host=self.app.pargs.dbhost, port=self.app.pargs.dbport, name=self.app.pargs.dbname)
+        # FIXME the .split(',') might break the regexp passed
+        moncov.ctl.sys_enable(host=self.app.pargs.dbhost, port=self.app.pargs.dbport, name=self.app.pargs.dbname,
+                                whitelist=self.app.pargs.whitelist.split(','), blacklist=self.app.pargs.blacklist.split(','))
 
     @controller.expose(help='disable system-wide coverage stats collecting')
     def sys_disable(self):
