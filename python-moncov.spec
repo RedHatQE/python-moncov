@@ -1,5 +1,5 @@
 Name:		python-moncov
-Version:	0.4
+Version:	0.5
 Release:	1%{?dist}
 Summary:	Python code coverage using MongoDB
 
@@ -58,6 +58,31 @@ fi
 %{_bindir}/moncov
 
 %changelog
+* Fri Feb 28 2014 dparalen <vetrisko@gmail.com> 0.5-1
+- Update README.md (vetrisko@gmail.com)
+- simple stats command (vetrisko@gmail.com)
+- fix: arg (vetrisko@gmail.com)
+- fix import (vetrisko@gmail.com)
+- fix expression (vetrisko@gmail.com)
+- introducing simple stats (vetrisko@gmail.com)
+- Fixing the pattern args (vetrisko@gmail.com)
+- introducing custom filter lists (vetrisko@gmail.com)
+- fix missing import (vetrisko@gmail.com)
+- fix params (vetrisko@gmail.com)
+- allow non-regexp params (vetrisko@gmail.com)
+- added fixme (vetrisko@gmail.com)
+- fix: dropping (vetrisko@gmail.com)
+- fix: avoid self-collecting (vetrisko@gmail.com)
+- fix: cement requires /home/mkovacik (vetrisko@gmail.com)
+- introduce the moncov tool (vetrisko@gmail.com)
+- fix name (vetrisko@gmail.com)
+- Fix: naming (vetrisko@gmail.com)
+- fix missing sha-bang (vetrisko@gmail.com)
+- fix: missing moncov.py (vetrisko@gmail.com)
+- fix: moncov.py (vetrisko@gmail.com)
+- introducing moncov tool (vetrisko@gmail.com)
+- display node names (vetrisko@gmail.com)
+
 * Wed Feb 26 2014 dparalen <vetrisko@gmail.com> 0.4-1
 - Automatic commit of package [python-moncov] release [0.3-1].
   (vetrisko@gmail.com)
