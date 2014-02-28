@@ -1,2 +1,3 @@
-import ctl, conf
-from moncov import (PyTracer, Collector)
+import ctl, conf, collector, tracer
+from collector import Collector
+from tracer import PyTracer

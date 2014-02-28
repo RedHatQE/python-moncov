@@ -1,6 +1,7 @@
 import yaml
 import logging
 import re
+import pymongo
 
 logging.basicConfig()
 log = logging.getLogger(__name__)
@@ -26,4 +27,8 @@ except Exception as e:
     log.warning("can't process blacklist, using: []; %s" % e.message)
     BLACKLIST = []
 
+def get_connection(host=DBHOST, port=DBPORT):
+    return pymongo.connection.Connection(host, port)
 
+def get_db(host=DBHOST, port=DBHOST, name=DBNAME):
+    return pymongo.database.Database(get_connection(host, port), name)

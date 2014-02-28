@@ -1,0 +1,124 @@
+from cement.core import (foundation, controller, handler)
+import moncov
+
+class A(controller.CementBaseController):
+    class Meta:
+        label = 'base'
+        interface = controller.IController
+        description = 'moncov collects coverage remotelly'
+        config_defaults = dict(
+            dbhost=moncov.conf.DBHOST,
+            dbport=moncov.conf.DBPORT,
+            dbname=moncov.conf.DBNAME
+        )
+        arguments = [
+            (['-a', '--dbhost'], dict(help='Host name of the MongoDB to use', default=moncov.conf.DBHOST)),
+            (['-b', '--dbport'], dict(help='Port of the MongoDB service', type=int, default=moncov.conf.DBPORT)),
+            (['-c', '--dbname'], dict(help='Name of the db to collect stats in', default=moncov.conf.DBNAME))
+        ]
+        
+
+    @controller.expose(hide=True, help='base default')
+    def default(self):
+        app.args.print_help()
+
+    def _setup(self, baseapp):
+        super(A, self)._setup(baseapp)
+
+
+class B(controller.CementBaseController):
+    class Meta:
+        label = 'stats'
+        stacked_on = None
+        stacked_type = 'embedded'
+        interface = controller.IController
+        description = 'stats...'
+
+    @controller.expose(hide=True, help='B default...', aliases=['help'])
+    def default(self):
+        app.args.print_help()
+
+class C(controller.CementBaseController):
+    class Meta:
+        label = 'ctl'
+        stacked_on = None
+        interface = controller.IController
+        description = 'ctl...'
+
+    @controller.expose(hide=True, help='C default', aliases=['help'])
+    def default(self):
+        app.args.print_help()
+
+class CA(A):
+    class Meta:
+        label = 'ctl_drop_controller'
+        stacked_on = 'ctl'
+        stacked_type = 'nested'
+        interface = controller.IController
+
+      
+    @controller.expose(hide=True, help='CA default', aliases=['help'])
+    def default(self):
+        pass
+
+    @controller.expose(help='drop remote coverage db')
+    def drop(self):
+        db = moncov.conf.get_db(host=self.app.pargs.dbhost, port=self.app.pargs.dbport, name=self.app.pargs.dbname)
+        moncov.ctl.drop(db)
+
+    @controller.expose(help='enable system-wide coverage stats collecting')
+    def sys_enable(self):
+        moncov.ctl.sys_enable(host=self.app.pargs.dbhost, port=self.app.pargs.dbport, name=self.app.pargs.dbname)
+
+    @controller.expose(help='disable system-wide coverage stats collecting')
+    def sys_disable(self):
+        moncov.ctl.sys_disable()
+
+class BA(A):
+    class Meta:
+        label = 'simple_controller'
+        stacked_on = 'stats'
+        stacked_type = 'nested'
+        interface = controller.IController
+
+       
+    @controller.expose(hide=True, help='BA default', aliases=['help'])
+    def default(self):
+        pass
+
+    @controller.expose(help='simple')
+    def simple(self):
+        print "simple"
+
+class BB(A):
+    class Meta:
+        label = 'cobertura_controller'
+        stacked_on = 'stats'
+        stacked_type = 'nested'
+        interface = controller.IController
+
+    @controller.expose(hide=True, help='BB default', aliases=['help'])
+    def default(self):
+        pass
+
+    @controller.expose(help='cobertura')
+    def cobertura(self):
+        print "cobertura"
+
+
+app = foundation.CementApp('myapp', base_controller=A)
+try:
+    # create the application
+
+    handler.register(B)
+    handler.register(C)
+    handler.register(BA)
+    handler.register(BB)
+    handler.register(CA)
+
+    # setup the application
+    app.setup()
+
+    app.run()
+finally:
+    app.close()
