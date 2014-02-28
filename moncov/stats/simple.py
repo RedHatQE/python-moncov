@@ -12,8 +12,8 @@ def print_stats(db=None, whitelist=None, blacklist=None):
     cursor_grouped = db.lines.aggregate([{"$group": {"_id": "$file", "lines": {"$addToSet": "$line"}}}])
     for doc in cursor_grouped['result']:
         filename = doc['_id']
-        if not any([lambda pattern: pattern.match(filename) for pattern in whitelist]) or \
-                any([lambda pattern: pattern.match(filename) for pattern in blacklist])
+        if not any([pattern.match(filename) for pattern in whitelist]) or \
+            any([pattern.match(filename) for pattern in blacklist]):
             continue
         print "%s" % filename,
         if str(filename).startswith('<'):
