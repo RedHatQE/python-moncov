@@ -5,12 +5,12 @@ import glob, os
 
 setup(name='moncov',
     version='0.5',
-    description='Python code coverage using MongoDB',
+    description='Python remote code coverage using MongoDB',
     author='Vitaly Kuznetsov',
     author_email='vitty@redhat.com',
     url='https://github.com/RedHatQE/python-moncov',
     license="GPLv3+",
-    install_requires=['pymongo', 'cement'],
+    install_requires=['pymongo', 'cement', 'PyYAML'],
     packages=[
         'moncov',
         'moncov/stats'
