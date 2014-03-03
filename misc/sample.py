@@ -30,11 +30,42 @@ class MyClass(object):
                 pass
             egg_method(yolk='yellow')
         chicken_method()
+        if True:
+                pass
+        else:
+            pass
 
 print "Good Bye!"
 
+for i in range(2):
+    pass
+else:
+    pass
+
 class Foo(object):
     mcls = MyClass()
+
+if True:
+    def f():
+        pass
+    if True:
+        class c (object):
+            pass
+        if True:
+            pass
+        elif False:
+            class cc(object):
+                def __init__(self):
+                    pass
+    else:
+        pass
+else:
+    pass
+
+if True:
+    3
+else:
+    4
 
 print "Really, Good Bye!"
 

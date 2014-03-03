@@ -12,11 +12,16 @@ C_E = 'C_E' # Class
 C_X = 'C_X'
 O_E = 'O_E' # Other
 O_X = 'O_X'
+IFX = 'IFX' # leaving if
 
 
-BTT = 'BTT'   # stack bottom
+# 'States'
+BTT = 'BTT'  # stack bottom
 CTT = 'CTT'  # bottom of regular class
 FTT = 'FTT'  # bottom of regular method/function
+IFT = 'IFT'  # if.test attribute
+IFB = 'IFB'  # if.body attribute
+IFO = 'IFO'  # if.orelse attribute
 
 # stack actions
 NOOP = lambda: lambda stack: stack
@@ -33,6 +38,8 @@ TBL = {
         (F_E, F_E): PUSH([F_E, F_E]), # function within function
         (F_E, C_E): PUSH([C_E, F_E]), # function within nested class
         (F_E, O_E): PUSH([O_E, F_E]), # function within other statement
+        (F_E, IFB): PUSH([IFB, F_E]), # entering function definition within if.body
+        (F_E, IFO): PUSH([IFO, F_E]), # entering function definition within if.orelse
         (F_X, FTT): NOOP(),           # leaving method
         (F_X, F_E): NOOP(),           # leaving any nested function
 
@@ -44,6 +51,8 @@ TBL = {
         (C_E, O_E): PUSH([O_E, C_E]), # entering class within other statement
         (C_X, CTT): NOOP(),           # leaving regular class
         (C_X, C_E): NOOP(),           # leaving any nested function
+        (C_E, IFB): PUSH([IFB, C_E]), # entering class definition within if.body
+        (C_E, IFO): PUSH([IFO, C_E]), # entering class definition within if.orelse
         
         (O_E, BTT): PUSH([BTT, O_E]), # entering other module-level statement
         (O_E, FTT): PUSH([FTT, O_E]), # entering other method-level statement
@@ -51,10 +60,27 @@ TBL = {
         (O_E, F_E): PUSH([F_E, O_E]), # entering other (nested-)function-level statement
         (O_E, C_E): PUSH([C_E, O_E]), # entering other nested-class-level statement
         (O_E, O_E): PUSH([O_E, O_E]), # entering other (nested) statemetn
-        (O_X, O_E): NOOP(),            # leaving other (nested) statement
+        (O_E, IFT): PUSH([IFT, O_E]), # entering other statement within if.test
+        (O_E, IFB): PUSH([IFB, O_E]), # entering other statement within if.body
+        (O_E, IFO): PUSH([IFO, O_E]), # entering other statement within if.orelse
+        (O_X, O_E): NOOP(),           # leaving other (nested) statement
         (O_X, FTT): PUSH([FTT]),
         (O_X, CTT): PUSH([CTT]),
         (O_X, BTT): PUSH([BTT]),
+
+        (IFT, BTT): PUSH([BTT, IFT]), # entering if statement within a module line
+        (IFT, FTT): PUSH([FTT, IFT]), # entering if statement within a regular method line
+        (IFT, CTT): PUSH([CTT, IFT]), # entering if statement within a regular class line
+        (IFT, C_E): PUSH([C_E, IFT]), # entering if statement within a nested class line
+        (IFT, F_E): PUSH([F_E, IFT]), # entering if statement within a nested function line
+        (IFT, O_E): PUSH([O_E, IFT]), # entering if statement within a (sub-)statement line
+        (IFT, IFB): PUSH([IFB, IFT]), # entering nested if statement from within if.body
+        (IFT, IFO): PUSH([IFO, IFT]), # entering nested if statement from within if.orelse
+        (IFB, IFT): PUSH([IFB]),      # entering if.body
+        (IFO, IFB): PUSH([IFO]),      # entering if.orelse
+        (IFX, IFB): NOOP(),           # leaving if statement from within if.body (no orelse present)
+        (IFX, IFO): NOOP(),           # leaving if statement from within of.orelse
+
 }
 
 class PushDownAutomaton(object):
@@ -80,21 +106,22 @@ class PushDownAutomaton(object):
         self.callbacks[(event, stack_event)](event, stack_event)
         # perform stack manipulation based on the transition table
         self.stack = TBL[(event, stack_event)](self.stack)
-        #import pprint
+        import pprint
         #print pprint.pformat(self.stack), event
 
 
 class Line(object):
-    prefix = ""
-    def __init__(self, node):
+    prefix = " "
+    def __init__(self, node, depth=0):
         self.node = node
+        self.depth = depth
 
     def __repr__(self):
-        return type(self).__name__ + "(%r)" % self.node
+        return type(self).__name__ + "(%r, depth=%r)" % (self.node, self.depth)
         print self
 
     def __str__(self):
-        return self.prefix + type(self).__name__ + ": %s" % self.node.lineno
+        return self.prefix * self.depth + type(self).__name__ + ": %s" % self.node.lineno
 
     def __call__(self, node):
         '''print line in case node linenos differ; update self.node'''
@@ -110,13 +137,15 @@ class Line(object):
            print self
 
 class ModuleLine(Line):
-    prefix = " "
-
+    pass
 class ClassLine(Line):
-    prefix = "   "
+    pass
 
 class MethodLine(Line):
-    prefix = "    "
+    pass
+
+class IfLine(Line):
+    pass
 
 class LineStatus(object):
     def __init__(self):
@@ -130,6 +159,10 @@ class LineStatus(object):
     def top_set(self, other):
         self.set_stack[-1] = other
 
+    @property
+    def depth(self):
+        return len(self.set_stack)
+
     def push_set(self):
         self.set_stack.append(set())
 
@@ -138,6 +171,10 @@ class LineStatus(object):
 
     def add_line(self, lineno):
         self.top_set.add(lineno)
+
+    @property
+    def info(self):
+        return self.depth * " " + "...total %r lines" % len(self.top_set)
 
 class Visitor(ast.NodeVisitor):
 
@@ -149,6 +186,18 @@ class Visitor(ast.NodeVisitor):
             (F_E, CTT): self.init_method,
             (C_X, CTT): self.exit_class,
             (F_X, FTT): self.exit_method,
+            (IFT, BTT): self.init_if,
+            (IFT, CTT): self.init_if,
+            (IFT, FTT): self.init_if,
+            (IFT, F_E): self.init_if,
+            (IFT, C_E): self.init_if,
+            (IFT, O_E): self.init_if,
+            (IFT, IFT): self.init_if,
+            (IFT, IFB): self.init_if,
+            (IFT, IFO): self.init_if,
+            (IFX, IFB): self.exit_if,
+            (IFX, IFO): self.exit_if,
+
         }
         self.callbacks = collections.defaultdict( \
             lambda: self.line_handler,
@@ -169,8 +218,23 @@ class Visitor(ast.NodeVisitor):
     def visit_ClassDef(self, node):
         self.generic_visit(node, (C_E, C_X))
 
+    def visit_If(self, node):
+        # need to distinguish between test/body/orelse if statement subtrees
+        self.node = node
+        self.pda(IFT)
+        super(Visitor, self).generic_visit(node.test)
+        self.pda(IFB)
+        for sub_node in node.body:
+            super(Visitor, self).generic_visit(sub_node)
+        if node.orelse is not None:
+            self.pda(IFO)
+            for sub_node in node.orelse:
+                super(Visitor, self).generic_visit(sub_node)
+        self.pda(IFX)
+
     def generic_visit(self, node, events=(O_E, O_X)):
         self.node = node
+        #print "::%s" % type(self.node)
         self.pda(events[0])
         super(Visitor, self).generic_visit(node)
         self.pda(events[1])
@@ -186,30 +250,39 @@ class Visitor(ast.NodeVisitor):
         self.line = ModuleLine(self.node)
 
     def exit_module(self, event, stack_event):
-        line_set = self.line_status.pop_set()
-        print "...total module lines: %s" % len(line_set)
+        print self.line_status.info
+        self.line_status.pop_set()
         self.line(self.node)
 
     def init_class(self, event, stack_event):
         print " Class: %s at %s" % (self.node.name, self.node.lineno)
         self.line_status.push_set()
-        self.line = ClassLine(self.node)
+        self.line = ClassLine(self.node, self.line_status.depth)
 
     def exit_class(self, event, stack_event):
-        line_set = self.line_status.pop_set()
-        print " ...total class lines: %s" % len(line_set)
-        self.line = ModuleLine(self.node)
+        print self.line_status.info
+        self.line_status.pop_set()
+        self.line = ModuleLine(self.node, self.line_status.depth)
 
     def init_method(self, event, stack_event):
         print "  Method: %s at %s" % (self.node.name, self.node.lineno)
         self.line_status.push_set()
-        self.lines = 0
-        self.line = MethodLine(self.node)
+        self.line = MethodLine(self.node, self.line_status.depth)
 
     def exit_method(self, event, stack_event):
-        line_set = self.line_status.pop_set()
-        print "  ...total method lines: %s" % len(line_set)
-        self.line = ClassLine(self.node)
+        print self.line_status.info
+        self.line_status.pop_set()
+        self.line = ClassLine(self.node, self.line_status.depth)
+
+    def init_if(self, event, stack_event):
+        self.line = IfLine(self.node, self.line_status.depth)
+        self.line_status.push_set()
+        pass
+
+    def exit_if(self, event, stack_event):
+        print self.line_status.info
+        self.line_status.pop_set()
+        pass
 
 
 ###
@@ -222,7 +295,7 @@ except Exception as e:
 
 tree = ast.parse(src)
 print src
-# import astpp
+#import astpp
 #print astpp.dump(tree, annotate_fields=True, include_attributes=True)
 visitor = Visitor()
 visitor.visit(tree)
