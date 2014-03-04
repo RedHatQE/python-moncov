@@ -1,5 +1,5 @@
 Name:		python-moncov
-Version:	0.5.1
+Version:	0.5.2
 Release:	1%{?dist}
 Summary:	Python code coverage using MongoDB
 
@@ -58,6 +58,9 @@ fi
 %{_bindir}/moncov
 
 %changelog
+* Tue Mar 04 2014 dparalen <vetrisko@gmail.com> 0.5.2-1
+- Fix: setup/deployment (vetrisko@gmail.com)
+
 * Tue Mar 04 2014 dparalen <vetrisko@gmail.com> 0.5.1-1
 - introducing three-digit versions (vetrisko@gmail.com)
 - introducing manifests (vetrisko@gmail.com)
