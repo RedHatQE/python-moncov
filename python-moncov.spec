@@ -1,5 +1,5 @@
 Name:		python-moncov
-Version:	0.5
+Version:	0.5.1
 Release:	1%{?dist}
 Summary:	Python code coverage using MongoDB
 
