@@ -10,7 +10,7 @@ setup(name='moncov',
     author_email='vitty@redhat.com',
     url='https://github.com/RedHatQE/python-moncov',
     license="GPLv3+",
-    provides='moncov',
+    provides=['moncov'],
     install_requires=['pymongo', 'cement', 'PyYAML'],
     packages=[
         'moncov',
