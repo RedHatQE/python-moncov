@@ -58,6 +58,13 @@ fi
 %{_bindir}/moncov
 
 %changelog
+* Tue Mar 04 2014 dparalen <vetrisko@gmail.com> 0.5.1-1
+- introducing three-digit versions (vetrisko@gmail.com)
+- introducing manifests (vetrisko@gmail.com)
+- fix: PyYAML dependency; put 'remote' in the description (vetrisko@gmail.com)
+- introducing IF statement parsing for future branch coverage reference
+  (vetrisko@gmail.com)
+
 * Fri Feb 28 2014 dparalen <vetrisko@gmail.com> 0.5-1
 - Update README.md (vetrisko@gmail.com)
 - simple stats command (vetrisko@gmail.com)
