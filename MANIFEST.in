@@ -1,1 +1,2 @@
 include etc/moncov.yaml
+include lib/systemd/system/moncov.service
