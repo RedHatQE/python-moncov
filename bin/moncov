@@ -1,138 +1,68 @@
 #!/usr/bin/env python
 
 import moncov; moncov.ctl.disable()
-from cement.core import (foundation, controller, handler)
+import aaargh
+import re
+import argparse
+import sys
+import logging
+import functools
 
-class A(controller.CementBaseController):
-    class Meta:
-        label = 'base'
-        interface = controller.IController
-        description = 'moncov collects coverage remotelly'
-        config_defaults = dict(
-            dbhost=moncov.conf.DBHOST,
-            dbport=moncov.conf.DBPORT,
-            dbname=moncov.conf.DBNAME
-        )
-        arguments = [
-            (['-a', '--dbhost'], dict(help='Host name of the MongoDB to use', default=moncov.conf.DBHOST)),
-            (['-b', '--dbport'], dict(help='Port of the MongoDB service', type=int, default=moncov.conf.DBPORT)),
-            (['-c', '--dbname'], dict(help='Name of the db to collect stats in', default=moncov.conf.DBNAME)),
-            (['-e', '--whitelist'], dict(help='coma-separated list of filter regexps; do not use coma-literals', default=moncov.conf.WHITELIST)),
-            (['-f', '--blacklist'], dict(help='coma-separated list of filter regexps; do not use coma-literals', default=moncov.conf.BLACKLIST))
-        ]
-        
-
-    @controller.expose(hide=True, help='base default')
-    def default(self):
-        app.args.print_help()
-
-    def _setup(self, baseapp):
-        super(A, self)._setup(baseapp)
+logging.basicConfig()
+log = logging.getLogger(__file__)
 
 
-class B(controller.CementBaseController):
-    class Meta:
-        label = 'stats'
-        stacked_on = None
-        stacked_type = 'embedded'
-        interface = controller.IController
-        description = 'stats...'
+def catching(func):
+    '''decorating in try/exept&log err'''
+    @functools.wraps(func)
+    def decorated(*args, **kvs):
+        try:
+            func(*args, **kvs)
+        except Exception as e:
+            log.error(func.func_name + ' failed: %r' % e.message)
+            sys.exit(2)
+    return decorated
 
-    @controller.expose(hide=True, help='B default...', aliases=['help'])
-    def default(self):
-        app.args.print_help()
+class ReAction(argparse.Action):
+    '''custom Re.compiling argparse action'''
+    def __call__(self, parser, namespace, values, option_string=None):
+        '''Re.compile action'''
+        setattr(namespace, self.dest, [re.compile(value) for value in values])
 
-class C(controller.CementBaseController):
-    class Meta:
-        label = 'ctl'
-        stacked_on = None
-        interface = controller.IController
-        description = 'ctl...'
-
-    @controller.expose(hide=True, help='C default', aliases=['help'])
-    def default(self):
-        app.args.print_help()
-
-class CA(A):
-    class Meta:
-        label = 'ctl_drop_controller'
-        stacked_on = 'ctl'
-        stacked_type = 'nested'
-        interface = controller.IController
-
-      
-    @controller.expose(hide=True, help='CA default', aliases=['help'])
-    def default(self):
-        pass
-
-    @controller.expose(help='drop remote coverage db')
-    def drop(self):
-        db = moncov.conf.get_db(host=self.app.pargs.dbhost, port=self.app.pargs.dbport, name=self.app.pargs.dbname)
-        moncov.ctl.drop(db)
-
-    @controller.expose(help='enable system-wide coverage stats collecting')
-    def sys_enable(self):
-        # FIXME the .split(',') might break the regexp passed
-        whitelist = self.app.pargs.whitelist
-        blacklist = self.app.pargs.blacklist
-        # default used?
-        if type(whitelist) is not list:
-            whitelist = whitelist.split(',')
-        if type(blacklist) is not list:
-            blacklist = blacklist.split(',')
-        moncov.ctl.sys_enable(host=self.app.pargs.dbhost, port=self.app.pargs.dbport, name=self.app.pargs.dbname,
-                                whitelist=whitelist, blacklist=blacklist)
-
-    @controller.expose(help='disable system-wide coverage stats collecting')
-    def sys_disable(self):
-        moncov.ctl.sys_disable()
-
-class BA(A):
-    class Meta:
-        label = 'simple_controller'
-        stacked_on = 'stats'
-        stacked_type = 'nested'
-        interface = controller.IController
-
-       
-    @controller.expose(hide=True, help='BA default', aliases=['help'])
-    def default(self):
-        pass
-
-    @controller.expose(help='simple')
-    def simple(self):
-        db = moncov.conf.get_db(host=self.app.pargs.dbhost, port=self.app.pargs.dbport, name=self.app.pargs.dbname)
-        moncov.stats.simple.print_stats(db=db, whitelist=self.app.pargs.whitelist, blacklist=self.app.pargs.blacklist)
-
-class BB(A):
-    class Meta:
-        label = 'cobertura_controller'
-        stacked_on = 'stats'
-        stacked_type = 'nested'
-        interface = controller.IController
-
-    @controller.expose(hide=True, help='BB default', aliases=['help'])
-    def default(self):
-        pass
-
-    @controller.expose(help='cobertura')
-    def cobertura(self):
-        print "cobertura"
+app = aaargh.App(description='moncov collects coverage remotelly')
+app.arg('-a', '--dbhost', help='Host name of the MongoDB to use', default=moncov.conf.DBHOST)
+app.arg('-b', '--dbport', help='Port of the MongoDB service', type=int, default=moncov.conf.DBPORT)
+app.arg('-c', '--dbname', help='Name of the db to collect stats in', default=moncov.conf.DBNAME)
 
 
-app = foundation.CementApp('myapp', base_controller=A)
-try:
-    # create the application
+@app.cmd(help='drop remote db')
+@catching
+def drop(dbhost, dbport, dbname):
+    db = moncov.conf.get_db(host=dbhost, port=dbport, name=dbname)
+    moncov.ctl.drop(db)
 
-    handler.register(B)
-    handler.register(C)
-    handler.register(BA)
-    handler.register(BB)
-    handler.register(CA)
+@app.cmd(help='enable collecting')
+@app.cmd_arg('-e', '--system', help='apply sytem-wide', default=True, action='store_true')
+@app.cmd_arg('-f', '--whitelist', help='filter regexps', default=moncov.conf.WHITELIST, action=ReAction, nargs='+')
+@app.cmd_arg('-g', '--blacklist', help='filter regexps', default=moncov.conf.BLACKLIST, action=ReAction, nargs='+')
+@catching
+def enable(dbhost, dbport, dbname, system, whitelist, blacklist):
+    moncov.ctl.sys_enable(host=dbhost, port=dbport, name=dbname, whitelist=whitelist, blacklist=blacklist)
 
-    # setup the application
-    app.setup()
+@app.cmd(help='disable collecting')
+@app.cmd_arg('-e', '--system', help='apply sytem-wide', default=True, action='store_true')
+@catching
+def disable(*args, **kvs):
+    moncov.ctl.sys_disable()
 
+@app.cmd(help='simple stats')
+@app.cmd_arg('-f', '--whitelist', help='filter regexps', default=moncov.conf.WHITELIST, action=ReAction, nargs='+')
+@app.cmd_arg('-g', '--blacklist', help='filter regexps', default=moncov.conf.BLACKLIST, action=ReAction, nargs='+')
+@catching
+def simple(dbhost, dbport, dbname, whitelist, blacklist):
+    db = moncov.conf.get_db(host=dbhost, port=dbport, name=dbname)
+    moncov.stats.simple.print_stats(db=db, whitelist=whitelist, blacklist=blacklist)
+
+
+if __name__ == '__main__':
     app.run()
-finally:
-    app.close()
