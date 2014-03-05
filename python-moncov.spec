@@ -1,5 +1,5 @@
 Name:		python-moncov
-Version:	0.5.3
+Version:	0.5.4
 Release:	1%{?dist}
 Summary:	Python code coverage using MongoDB
 
@@ -58,6 +58,18 @@ fi
 %{_bindir}/moncov
 
 %changelog
+* Wed Mar 05 2014 dparalen <vetrisko@gmail.com> 0.5.4-1
+- fix requires (vetrisko@gmail.com)
+- fix: longer timeout (vetrisko@gmail.com)
+- got rid of cement (vetrisko@gmail.com)
+- fix missing PyYAML dependency (vetrisko@gmail.com)
+- got rid of cement (vetrisko@gmail.com)
+- reimplemented using aaargh (vetrisko@gmail.com)
+- Automatic commit of package [python-moncov] release [0.5.3-1].
+  (vetrisko@gmail.com)
+- fix: provides (vetrisko@gmail.com)
+- Update README.md (vetrisko@gmail.com)
+
 * Tue Mar 04 2014 dparalen <vetrisko@gmail.com> 0.5.3-1
 - fix: provides (vetrisko@gmail.com)
 
