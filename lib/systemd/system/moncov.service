@@ -5,6 +5,6 @@ Requires=system.network
 [Service]
 ExecStart=/usr/bin/moncov enable
 ExecStop=/usr/bin/moncov disable
-TimeoutSec=1
+TimeoutSec=10
 RemainAfterExit=true
 Type=oneshot
