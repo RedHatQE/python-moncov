@@ -8,7 +8,7 @@ Usage
 
 * yum install python-moncov
 * check /etc/moncov.yaml
-* systemctl start moncov.service
+* sudo systemctl start moncov.service 
 * python misc/sample.py
-* systemctl stop moncov.service
-* moncov stats simple | grep sample
+* sudo systemctl stop moncov.service
+* moncov simple | grep sample
