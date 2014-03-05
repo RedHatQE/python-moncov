@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+__requires__ = ['moncov > 0.1']
+
 import moncov; moncov.ctl.disable()
 import aaargh
 import re
