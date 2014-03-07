@@ -1,6 +1,7 @@
 '''raw data tracer for Coverage'''
 import sys
 import pymongo
+import threading
 
 _CACHE = {}
 _SHOULD_TRACE = {}
@@ -21,15 +22,13 @@ class PyTracer(object):
             self.enabled = False
         else:
             self.enabled = True
+        # a stack of line sets for caching updates/inserts of executed lines
+        self.stack = []
 
     def _trace(self, frame, event, arg_unused):
         """The trace function passed to sys.settrace."""
         # reentrance not allowed
         if not self.enabled or not self.db:
-            return self._trace
-
-        if event != 'line':
-            # oly care about line events
             return self._trace
 
         filename, lineno = frame.f_code.co_filename, frame.f_lineno
@@ -42,26 +41,58 @@ class PyTracer(object):
                 any([regexp.match(filename) for regexp in self.whitelist]) and \
                 not any([regexp.match(filename) for regexp in self.blacklist])
             self.enabled = True
-
         if not self._should_process[filename]:
+           return self._trace
+
+        if event == 'call':
+            # push new frame line insert/update sets
+            self.stack.append((set(), set()))
+            return self._trace
+
+        if event == 'return' or event == 'exception':
+            # commit changes for current frame
+            if not self.stack:
+                return self._trace
+
+            self.enabled = False # causes a call
+            upsert, update = self.stack.pop()
+            # upsert not yet seen lines
+            for lineno in upsert:
+                try:
+                    self.db.lines.update({"file": filename, "line": lineno},
+                            {'$inc': {'hits': 1}}, upsert=True, w=0)
+                except Exception as e:
+                    #print ">>%r" % e
+                    continue
+                else:
+                    # remote cache synced; avoid reporting same (file, line) again
+                    self._cache[(filename, lineno)] = True
+            # update already seen lines
+            if len(update):
+                try:
+                    self.db.lines.update({"file": filename, "line": {"$in":
+                            list(update)}}, {"$inc": {"hits": 1}}, multi=True, w=0)
+                except Exception as e:
+                    # print ">%r" % e
+                    pass
+
+            if event == 'exception':
+                self.stack.append((set(), set()))
+
+            self.enabled = True
+            return self._trace
+
+        if event != 'line':
+            # c_* events not processed
             return self._trace
 
         if (filename, lineno) in self._cache:
-            # already reported --- don't care
+            # already reported --- put in update set
+            self.stack[-1][1].add(lineno)
             return self._trace
 
-        # not yet collected
-        try:
-            self.enabled = False # causes a call
-            self.db.lines.update({"file": filename, "line": lineno}, {'$setOnInsert': {}}, upsert=True, w=0)
-        except:
-            pass
-        else:
-            # remote cache synced; avoid reporting same (file, line) again
-            self._cache[(filename, lineno)] = True
-        finally:
-            self.enabled = True
-
+        # not yet collected lineno --- put in upsert set
+        self.stack[-1][0].add(lineno)
         return self._trace
 
     def start(self):
