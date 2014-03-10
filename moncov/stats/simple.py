@@ -9,7 +9,8 @@ def print_stats(db=None, whitelist=None, blacklist=None):
         db = moncov.conf.get_db()
     whitelist = moncov.conf.get_whitelist(whitelist)
     blacklist = moncov.conf.get_blacklist(blacklist)
-    cursor_grouped = db.lines.aggregate([{"$group": {"_id": "$file", "lines": {"$addToSet": "$line"}}}])
+    cursor_grouped = db.lines.aggregate([{"$group": {"_id": "$_id.file",
+        "lines": {"$addToSet": "$_id.line"}}}])
     for doc in cursor_grouped['result']:
         filename = doc['_id']
         if not any([pattern.match(filename) for pattern in whitelist]) or \
@@ -38,3 +39,6 @@ def print_stats(db=None, whitelist=None, blacklist=None):
             print "...empty"
             continue
         print ": %1.2f (%s/%s)" % (float(hits)/float(total), hits, total)
+
+if __name__ == '__main__':
+    print_stats()
