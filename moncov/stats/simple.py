@@ -24,12 +24,12 @@ def print_stats(db=None, whitelist=None, blacklist=None):
             with open(filename) as fd:
                 src = fd.read()
         except Exception as e:
-            print "...can't read file: %s" % e.message
+            print "...can't read file: %r" % e
             continue
         try:
             tree = ast.parse(src)
         except Exception as e:
-            print "...has syntax errors: %s" % e.message
+            print "...has syntax errors: %r" % e
             continue
         hit_lines = set(map(lambda number: int(number), doc['lines']))
         total_set = set([x.lineno for x in ast.walk(tree) if hasattr(x, 'lineno')])
