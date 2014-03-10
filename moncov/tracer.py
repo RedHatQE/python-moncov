@@ -20,18 +20,20 @@ class PyTracer(object):
         try:
             self.con = pymongo.connection.Connection(dbhost, dbport)
             self.db = pymongo.database.Database(self.con, dbname)
-        except:
+        except Exception as e:
+            print e
             self.con = None
             self.db = None
             self.enabled = False
             return
         try:
-            self.db.createCollection(name="events", capped=True, max=1024^2,
+            self.db.create_collection(name="events", capped=True, max=1024^2,
                     size=1024^3)
         except pymongo.errors.CollectionInvalid:
             # already has such collection; ok
             self.enabled = True
-        except:
+        except Exception as e:
+            print e
             self.enabled = False
         else:
             self.enabled = True
