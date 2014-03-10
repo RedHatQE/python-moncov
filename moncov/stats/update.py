@@ -32,7 +32,7 @@ def update(db=None):
     else:
         # will limit the map-reduce to id newer than original
         # last.event_id
-        query = {'$gt': {'_id': original_last['event_id']}}
+        query = {'$gte': {'_id': original_last['event_id']}}
     # update the hit-counts, "merge-back" with reduce
     db.events.map_reduce(map=_MAP, reduce=_REDUCE, query=query,
             out={'reduce': 'lines'})
