@@ -70,6 +70,12 @@ def simple(dbhost, dbport, dbname, whitelist, blacklist):
     db = moncov.conf.get_db(host=dbhost, port=dbport, name=dbname)
     moncov.stats.simple.print_stats(db=db, whitelist=whitelist, blacklist=blacklist)
 
+@catching
+@app.cmd(help='calculate stats updates')
+@catching
+def update(dbhost, dbport, dbname):
+    db = moncov.conf.get_db(host=dbhost, port=dbport, name=dbname)
+    moncov.stats.update.update(db=db)
 
 if __name__ == '__main__':
     app.run()
