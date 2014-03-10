@@ -28,14 +28,16 @@ def update(db=None):
     # limit the counting with map-reduce query based on the last_event._id
     if original_last is None:
         # was empty
-        query = {}
+        query = {'_id': {'$lte': last_event['_id']}}
     else:
         # will limit the map-reduce to id newer than original
         # last.event_id
-        query = {'$gte': {'_id': original_last['event_id']}}
+        query = {'_id': {'$gt': original_last['event_id'], '$lte': last_event['_id']}}
     # update the hit-counts, "merge-back" with reduce
-    db.events.map_reduce(map=_MAP, reduce=_REDUCE, query=query,
-            out={'reduce': 'lines'})
+    response = db.events.map_reduce(map=_MAP, reduce=_REDUCE, query=query,
+            out={'reduce': 'lines'}, full_response=True)
+    #import pprint
+    #print pprint.pformat(response)
 
 if __name__ == '__main__':
     update()
