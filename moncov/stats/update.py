@@ -20,15 +20,24 @@ def update(db=None):
     # ensure proper index by _id.file, _id.line
     db.lines.ensure_index([('_id.file', pymongo.ASCENDING), ('_id.line', pymongo.ASCENDING)],
             unique=True, drop_dups=True, sparse=True)
+    try:
+        pivot = db.last_event.find({})[0]
+    except IndexError as e:
+        # elect the pivot as the maximum of all
+        pivot = {'event_id': pymongo.helpers.bson.ObjectId()}
+        db.last_event.insert(pivot)
+        db.last_event.remove({'event_id': {'$lt': pivot['event_id']}})
+ 
     # figure out the last used _id to avoid double-counting
-    # sort of a test&set
+    # - the pivot: no records newer than pivot are being counted
+    # after the test&set succeeded
     last_event = db.events.find({}, sort=[('$natural', -1)], limit=1)[0]
-    original_last = db.last_event.find_and_modify({}, update={'event_id':
-        last_event['_id']}, upsert=True)
+    original_last = db.last_event.find_and_modify({'event_id': pivot['event_id']},
+            update={'event_id': last_event['_id']})
     # limit the counting with map-reduce query based on the last_event._id
     if original_last is None:
-        # was empty
-        query = {'_id': {'$lte': last_event['_id']}}
+        # race detected --- some other process already counted the interval
+        return
     else:
         # will limit the map-reduce to id newer than original
         # last.event_id
@@ -36,8 +45,8 @@ def update(db=None):
     # update the hit-counts, "merge-back" with reduce
     response = db.events.map_reduce(map=_MAP, reduce=_REDUCE, query=query,
             out={'reduce': 'lines'}, full_response=True)
-    #import pprint
-    #print pprint.pformat(response)
+    import pprint
+    print pprint.pformat(response)
 
 if __name__ == '__main__':
     update()
