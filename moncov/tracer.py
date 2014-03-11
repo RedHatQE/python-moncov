@@ -27,8 +27,8 @@ class PyTracer(object):
             self.enabled = False
             return
         try:
-            self.db.create_collection(name="events", capped=True, max=1024^2,
-                    size=1024^3)
+            self.db.create_collection(name="events", capped=True, max=1024**2,
+                    size=1024**3)
         except pymongo.errors.CollectionInvalid:
             # already has such collection; ok
             self.enabled = True

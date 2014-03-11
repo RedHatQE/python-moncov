@@ -45,8 +45,8 @@ def update(db=None):
     # update the hit-counts, "merge-back" with reduce
     response = db.events.map_reduce(map=_MAP, reduce=_REDUCE, query=query,
             out={'reduce': 'lines'}, full_response=True)
-    import pprint
-    print pprint.pformat(response)
+    #import pprint
+    #print pprint.pformat(response)
 
 if __name__ == '__main__':
     update()
