@@ -36,6 +36,11 @@ app.arg('-a', '--dbhost', help='Host name of the MongoDB to use', default=moncov
 app.arg('-b', '--dbport', help='Port of the MongoDB service', type=int, default=moncov.conf.DBPORT)
 app.arg('-c', '--dbname', help='Name of the db to collect stats in', default=moncov.conf.DBNAME)
 
+@app.cmd(help='cobertura xml output')
+@app.cmd_arg('-o', '--output', help='output xml filename', default='moncov.xml')
+@catching
+def cobertura(dbhost, dbport, dbname, output):
+    moncov.stats.cobertura.generate_xml(dbhost, dbport, dbname, output)
 
 @app.cmd(help='drop remote db')
 @catching
