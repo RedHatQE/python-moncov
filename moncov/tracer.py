@@ -60,7 +60,7 @@ class PyTracer(object):
 
         if event == 'call':
             # push new frame line insert list
-            self.stack.append([])
+            self.stack.append([{'file': filename, 'line': lineno}])
             return self._trace
 
         if event == 'return' or event == 'exception':
