@@ -21,12 +21,12 @@ def update(db=None):
     db.lines.ensure_index([('_id.file', pymongo.ASCENDING), ('_id.line', pymongo.ASCENDING)],
             unique=True, drop_dups=True, sparse=True)
     try:
-        pivot = db.last_event.find({})[0]
+        pivot = db.last_event.find({}, sort=[('$natural', 1)], limit=1)[0]
     except IndexError as e:
         # elect the pivot as the maximum of all
         pivot = {'event_id': pymongo.helpers.bson.ObjectId()}
         db.last_event.insert(pivot)
-        db.last_event.remove({'event_id': {'$lt': pivot['event_id']}})
+        pivot = db.last_event.find({}, sort=[('$natural', 1)], limit=1)[0]
  
     # figure out the last used _id to avoid double-counting
     # - the pivot: no records newer than pivot are being counted
