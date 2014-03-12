@@ -23,7 +23,7 @@ def update(db=None):
     try:
         pivot = db.last_event.find({}, sort=[('$natural', 1)], limit=1)[0]
     except IndexError as e:
-        # elect the pivot as the maximum of all
+        # elect the pivot as the first of all
         pivot = {'event_id': pymongo.helpers.bson.ObjectId()}
         db.last_event.insert(pivot)
         pivot = db.last_event.find({}, sort=[('$natural', 1)], limit=1)[0]
