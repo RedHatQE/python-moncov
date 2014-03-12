@@ -31,7 +31,11 @@ def update(db=None):
     # figure out the last used _id to avoid double-counting
     # - the pivot: no records newer than pivot are being counted
     # after the test&set succeeded
-    last_event = db.events.find({}, sort=[('$natural', -1)], limit=1)[0]
+    try:
+        last_event = db.events.find({}, sort=[('$natural', -1)], limit=1)[0]
+    except IndexError as e:
+        # no events to count
+        return
     original_last = db.last_event.find_and_modify({'event_id': pivot['event_id']},
             update={'event_id': last_event['_id']})
     # limit the counting with map-reduce query based on the last_event._id
