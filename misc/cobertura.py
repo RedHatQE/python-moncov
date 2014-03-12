@@ -388,7 +388,7 @@ class Visitor(ast.NodeVisitor):
 
 ###
 
-def generate_xml(dbhost = "localhost", dbport = 27017, dbname = 'moncov'):
+def generate_xml(dbhost = "localhost", dbport = 27017, dbname = 'moncov', output='moncov.xml'):
 
 	connection=pymongo.connection.Connection(dbhost, dbport)
 	db=pymongo.database.Database(connection, dbname)
@@ -422,20 +422,8 @@ def generate_xml(dbhost = "localhost", dbport = 27017, dbname = 'moncov'):
 		    print "Can't read: %s" % e.message, str(doc['_id'])
 		    #sys.exit(2)
 		    continue
-		    
-		
-		    
-		    
 
-		    
-
-		
-		
-		
-	    
-
-
-	f = open('mongo.xml', 'w')	
+	f = open(output, 'w')	
 	f.write(etree.tostring(xml_tree, pretty_print=True, xml_declaration=True, doctype="<!--DOCTYPE coverage SYSTEM 'http://cobertura.sourceforge.net/xml/coverage-04.dtd'-->"))
 	f.close()
 
