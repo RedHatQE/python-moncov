@@ -10,7 +10,7 @@ def disable():
     sys.settrace(None)
 
 
-def enable(db=None, host=conf.DBHOST, port=conf.DBPORT, name=conf.DNAME,
+def enable(db=None, host=conf.DBHOST, port=conf.DBPORT, name=conf.DBNAME,
         whitelist=conf.WHITELIST, blacklist=conf.BLACKLIST):
     '''enable coverage collecting'''
     import collector

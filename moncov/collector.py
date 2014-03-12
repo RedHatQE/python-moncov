@@ -12,13 +12,18 @@ class Collector(object):
     # and popped when stopped.  Collectors on the stack are paused when not
     # the top, and resumed when they become the top again.
 
-    def __init__(self, host=None, port=None, name=None, whitelist=None, blacklist=None):
+    def __init__(self, db=None, host=None, port=None, name=None, whitelist=None, blacklist=None):
         self.tracers = []
         self._trace_class = PyTracer
         from conf import (DBHOST, DBPORT, DBNAME, BLACKLIST, WHITELIST)
-        self.dbhost = host or DBHOST
-        self.dbport = port or DBPORT
-        self.dbname = name or DBNAME
+        if db is None:
+            self.dbhost = host or DBHOST
+            self.dbport = port or DBPORT
+            self.dbname = name or DBNAME
+        else:
+            self.dbhost = db.connection.host
+            self.dbport = db.connection.port
+            self.dbname = db.name
         self.blacklist = [re.compile(regexp) for regexp in blacklist] or BLACKLIST
         self.whitelist = [re.compile(regexp) for regexp in whitelist] or WHITELIST
 
