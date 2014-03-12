@@ -1,5 +1,5 @@
 Name:		python-moncov
-Version:	0.5.4
+Version:	0.5.5
 Release:	1%{?dist}
 Summary:	Python code coverage using MongoDB
 
@@ -58,6 +58,12 @@ fi
 %{_bindir}/moncov
 
 %changelog
+* Wed Mar 12 2014 dparalen <vetrisko@gmail.com> 0.5.5-1
+- introducing cobertura moncov output (igulina@redhat.com)
+- Introducing output filename (igulina@redhat.com)
+- Fixed package name and hits counts (igulina@redhat.com)
+- Introducing cobertura xml (igulina@redhat.com)
+
 * Wed Mar 05 2014 dparalen <vetrisko@gmail.com> 0.5.4-1
 - fix requires (vetrisko@gmail.com)
 - fix: longer timeout (vetrisko@gmail.com)
