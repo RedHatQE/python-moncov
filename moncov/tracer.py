@@ -1,6 +1,8 @@
 '''raw data tracer for Coverage'''
 import sys
 import threading
+import logging
+log = logging.getLogger(__name__)
 
 _SHOULD_TRACE = {}
 
@@ -29,6 +31,7 @@ class PyTracer(object):
             return
         else:
             self.enabled = True
+        log.info('%r using: %r' % (self, self.db))
 
 
     def _trace(self, frame, event, arg_unused):

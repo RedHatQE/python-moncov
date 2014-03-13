@@ -5,7 +5,9 @@ import threading
 import conf
 import re
 from tracer import PyTracer
+import logging
 
+log = logging.getLogger(__name__)
 
 class Collector(object):
     # The stack of active Collectors.  Collectors are added here when started,
@@ -27,6 +29,7 @@ class Collector(object):
             self.dbname = db.name
         self.blacklist = [re.compile(regexp) for regexp in blacklist] or BLACKLIST
         self.whitelist = [re.compile(regexp) for regexp in whitelist] or WHITELIST
+        log.info('using: %(dbhost)r, %(dbport)r, %(dbname)r, %(whitelist)r, %(blacklist)r' % self.__dict__)
 
 
     def __repr__(self):
