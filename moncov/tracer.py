@@ -12,7 +12,7 @@ class PyTracer(object):
         self.whitelist = whitelist
         self._should_process = getattr(sys.modules[__name__], '_SHOULD_TRACE')
         # a stack of line lists for caching inserts of executed lines
-        self.stack = []
+        self.stack = [[]]
         # uses 2 collections
         # - lines: indexed by filename,lineno; fields: hits count
         # - events: capped collection for short-term filename,lineno events
