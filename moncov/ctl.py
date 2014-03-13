@@ -17,6 +17,7 @@ def enable(db=None, dbhost=conf.DBHOST, dbport=conf.DBPORT, dbname=conf.DBNAME,
     c = collector.Collector(db=db, dbhost=dbhost, dbport=dbport, dbname=dbname,
             whitelist=whitelist, blacklist=blacklist)
     c.start()
+    return c
 
 
 def drop(db=None, host=conf.DBHOST, port=conf.DBPORT, name=conf.DBNAME):
