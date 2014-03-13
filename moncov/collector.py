@@ -12,14 +12,15 @@ class Collector(object):
     # and popped when stopped.  Collectors on the stack are paused when not
     # the top, and resumed when they become the top again.
 
-    def __init__(self, db=None, host=None, port=None, name=None, whitelist=None, blacklist=None):
+    def __init__(self, db=None, dbhost=None, dbport=None, dbname=None,
+                whitelist=None, blacklist=None):
         self.tracers = []
         self._trace_class = PyTracer
         from conf import (DBHOST, DBPORT, DBNAME, BLACKLIST, WHITELIST)
         if db is None:
-            self.dbhost = host or DBHOST
-            self.dbport = port or DBPORT
-            self.dbname = name or DBNAME
+            self.dbhost = dbhost or DBHOST
+            self.dbport = dbport or DBPORT
+            self.dbname = dbname or DBNAME
         else:
             self.dbhost = db.connection.host
             self.dbport = db.connection.port
@@ -33,7 +34,8 @@ class Collector(object):
 
     def _start_tracer(self):
         """Start a new Tracer object, and store it in self.tracers."""
-        tracer = PyTracer(self.dbhost, self.dbport, self.dbname, self.blacklist, self.whitelist)
+        tracer = PyTracer(dbhost=self.dbhost, dbport=self.dbport,
+                dbname=self.dbname, blacklist=self.blacklist, whitelist=self.whitelist)
         fn = tracer.start()
         self.tracers.append(tracer)
         return fn
