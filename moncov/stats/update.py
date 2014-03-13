@@ -1,5 +1,4 @@
-# prevent tracing ourselves
-import moncov; moncov.ctl.disable()
+import moncov
 import pymongo
 
 #  => {_id: {file: <path>, line: <lineno>}, value: <hit-count>}
@@ -24,8 +23,7 @@ def update(db=None):
         pivot = db.last_event.find({}, sort=[('$natural', 1)], limit=1)[0]
     except IndexError as e:
         # elect the pivot as the first of all
-        pivot = {'event_id': pymongo.helpers.bson.ObjectId()}
-        db.last_event.insert(pivot)
+        moncov.ctl.init(db)
         pivot = db.last_event.find({}, sort=[('$natural', 1)], limit=1)[0]
  
     # figure out the last used _id to avoid double-counting

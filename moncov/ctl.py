@@ -48,6 +48,8 @@ def init(db=None, dbhost=conf.DBHOST, dbport=conf.DBPORT, dbname=conf.DBNAME,
     try:
         db.create_collection(name="events", capped=True, max=events_count,
                             size=events_totalsize)
+        pivot = {'event_id': pymongo.helpers.bson.ObjectId()}
+        db.last_event.insert(pivot)
     except pymongo.errors.CollectionInvalid as e:
         # already has such collection; ok
         log.info("Events collection already present in %r: %r" % (db, e))
