@@ -48,6 +48,13 @@ def drop(dbhost, dbport, dbname):
     db = moncov.conf.get_db(host=dbhost, port=dbport, name=dbname)
     moncov.ctl.drop(db)
 
+@app.cmd(help='explicitly initialize remote db')
+@app.cmd_arg('-p', '--events-count', help='length of the events buffer to use', type=int, default=moncov.conf.EVENTS_COUNT)
+@app.cmd_arg('-q', '--events-totalsize', help='byte capacity of the buffer to use', type=int, default=moncov.conf.EVENTS_TOTALSIZE)
+@catching
+def init(dbhost, dbport, dbname, events_count, events_totalsize):
+    moncov.ctl.init(dbhost=dbhost, dbport=dbport, dbname=dbname, events_count=events_count, events_totalsize=events_totalsize)
+
 @app.cmd(help='enable collecting')
 @app.cmd_arg('-e', '--system', help='apply sytem-wide', default=True, action='store_true')
 @app.cmd_arg('-f', '--whitelist', help='filter regexps', default=moncov.conf.WHITELIST, action=ReAction, nargs='+')

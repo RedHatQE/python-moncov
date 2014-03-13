@@ -16,6 +16,9 @@ except Exception as e:
 DBHOST = CFG.get('dbhost', 'localhost')
 DBPORT = CFG.get('dbport', 27017)
 DBNAME = CFG.get('dbname', 'moncov')
+EVENTS_COUNT = CFG.get('events_count', 8192)
+EVENTS_TOTALSIZE = CFG.get('events_totalsize', EVENTS_COUNT * 1024)
+
 try:
     WHITELIST = map(lambda item: re.compile(item), CFG.get('whitelist', ['.*']))
 except Exception as e:
@@ -27,11 +30,11 @@ except Exception as e:
     log.warning("can't process blacklist, using: []; %s" % e.message)
     BLACKLIST = []
 
-def get_connection(host=DBHOST, port=DBPORT):
-    return pymongo.connection.Connection(host, port)
+def get_connection(dbhost=DBHOST, dbport=DBPORT):
+    return pymongo.connection.Connection(dbhost, dbport)
 
-def get_db(host=DBHOST, port=DBPORT, name=DBNAME):
-    return pymongo.database.Database(get_connection(host, port), name)
+def get_db(dbhost=DBHOST, dbport=DBPORT, dbname=DBNAME):
+    return pymongo.database.Database(get_connection(dbhost, dbport), dbname)
 
 def get_relist(relist):
     if type(relist) is not list:

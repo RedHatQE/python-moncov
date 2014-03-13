@@ -1,6 +1,5 @@
 '''raw data tracer for Coverage'''
 import sys
-import pymongo
 import threading
 
 _SHOULD_TRACE = {}
@@ -18,23 +17,15 @@ class PyTracer(object):
         #           storage
         # events is map-reduced to lines with the moncov stats commands
         try:
-            self.con = pymongo.connection.Connection(dbhost, dbport)
-            self.db = pymongo.database.Database(self.con, dbname)
+            import conf
+            self.db = conf.get_db(dbhost=dbhost, dbport=dbport, dbname=dbname)
+            moncov.ctl.init(db=db)
         except Exception as e:
-            print e
+            print >> sys.stderr, "%r, %r error: %r" % (__file__, self, e)
             self.con = None
             self.db = None
             self.enabled = False
             return
-        try:
-            self.db.create_collection(name="events", capped=True, max=1024**2,
-                    size=1024**3)
-        except pymongo.errors.CollectionInvalid:
-            # already has such collection; ok
-            self.enabled = True
-        except Exception as e:
-            print e
-            self.enabled = False
         else:
             self.enabled = True
 
@@ -74,8 +65,7 @@ class PyTracer(object):
             try:
                 self.db.events.insert(lines, w=0)
             except Exception as e:
-                print e
-                pass
+                print >> sys.stderr, "%r, %r error: %r" % (__file__, self, e)
             finally:
                 self.enabled = True
             if event == 'exception':
