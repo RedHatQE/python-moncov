@@ -1,5 +1,5 @@
 # prevent tracing ourselves
-import moncov; moncov.ctl.disable()
+import moncov
 import ast
 import sys
 
