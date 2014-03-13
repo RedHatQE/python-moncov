@@ -18,8 +18,9 @@ class PyTracer(object):
         # events is map-reduced to lines with the moncov stats commands
         try:
             import conf
+            import ctl
             self.db = conf.get_db(dbhost=dbhost, dbport=dbport, dbname=dbname)
-            moncov.ctl.init(db=db)
+            ctl.init(db=self.db)
         except Exception as e:
             print >> sys.stderr, "%r, %r error: %r" % (__file__, self, e)
             self.con = None
