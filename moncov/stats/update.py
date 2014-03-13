@@ -22,9 +22,8 @@ def update(db=None):
     try:
         pivot = db.last_event.find({}, sort=[('$natural', 1)], limit=1)[0]
     except IndexError as e:
-        # elect the pivot as the first of all
-        moncov.ctl.init(db)
-        pivot = db.last_event.find({}, sort=[('$natural', 1)], limit=1)[0]
+        # init not yet called
+        return
  
     # figure out the last used _id to avoid double-counting
     # - the pivot: no records newer than pivot are being counted
