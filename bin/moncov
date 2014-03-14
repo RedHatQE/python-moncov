@@ -42,18 +42,16 @@ app.arg('-c', '--dbname', help='Name of the db to collect stats in', default=mon
 def cobertura(dbhost, dbport, dbname, output):
     moncov.stats.cobertura.generate_xml(dbhost, dbport, dbname, output)
 
-@app.cmd(help='drop remote db')
-@catching
-def drop(dbhost, dbport, dbname):
-    db = moncov.conf.get_db(dbhost=dbhost, dbport=dbport, dbname=dbname)
-    moncov.ctl.drop(db=db)
-
-@app.cmd(help='explicitly initialize remote db')
+@app.cmd(help='reset traces counting')
 @app.cmd_arg('-p', '--events-count', help='length of the events buffer to use', type=int, default=moncov.conf.EVENTS_COUNT)
 @app.cmd_arg('-q', '--events-totalsize', help='byte capacity of the buffer to use', type=int, default=moncov.conf.EVENTS_TOTALSIZE)
+@app.cmd_arg('-r', '--no-init', help='just drop', default=False, action='store_true')
 @catching
-def init(dbhost, dbport, dbname, events_count, events_totalsize):
-    moncov.ctl.init(dbhost=dbhost, dbport=dbport, dbname=dbname, events_count=events_count, events_totalsize=events_totalsize)
+def reset(dbhost, dbport, dbname, events_count, events_totalsize, no_init):
+    db = moncov.conf.get_db(dbhost=dbhost, dbport=dbport, dbname=dbname)
+    moncov.ctl.drop(db=db)
+    if not no_init:
+        moncov.ctl.init(db=db, events_count=events_count, events_totalsize=events_totalsize)
 
 @app.cmd(help='enable collecting')
 @app.cmd_arg('-e', '--system', help='apply sytem-wide', default=True, action='store_true')
