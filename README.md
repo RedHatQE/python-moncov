@@ -7,7 +7,7 @@ Usage
 
 * pip install moncov
 * check /etc/moncov.yaml
-* moncov update
+* moncov reset
 * sudo moncov enable 
 * python misc/sample.py
 * sudo moncov disable
@@ -16,10 +16,9 @@ Usage
 
 Notes
 -----
-* works in an best-effort service way
+* branch rates are a work-in-progress
+* in case of a race condition:
 * loosing line events is OK
 * double-counting line events is bad
-* moncov update creates a custom pivot to guard double counting
-* when run for the first time (or after moncov drop) some events might be lost
-* systemd service present: moncov.service
-* rpm spec file present
+* moncov reset creates a custom pivot to prevent double counting
+* some events might be lost because of the custom pivot election
