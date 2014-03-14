@@ -36,6 +36,12 @@ def get_connection(dbhost=DBHOST, dbport=DBPORT):
 def get_db(dbhost=DBHOST, dbport=DBPORT, dbname=DBNAME):
     return pymongo.database.Database(get_connection(dbhost, dbport), dbname)
 
+def get_dbdetails(db=None):
+    '''return dbhostname, dbport, dbname'''
+    if db is None:
+        return DBHOST, DBPORT, DBNAME
+    return db.connection.host, db.connection.port, db.name
+
 def get_relist(relist):
     if type(relist) is not list:
         relist = relist.split(',')
