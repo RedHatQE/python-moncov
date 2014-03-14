@@ -11,10 +11,11 @@ _MAP = '''function(){emit({file: this.file, line: this.line}, 1)}'''
 _REDUCE = '''function(key, values){return Array.sum(values)}'''
 
 
-def update(db=None):
+def update(db=None, dbhost=moncov.conf.DBHOST, dbport=moncov.conf.DBPORT,
+            dbname=moncov.conf.DBNAME):
     '''map-reduce events to lines collection'''
     if db is None:
-        db = moncov.conf.get_db()
+        db = moncov.conf.get_db(dbhost=dbhost, dbport=dbport, dbname=dbname)
     # uses 2 collections
     # - lines: indexed by filename,lineno; fields: value: hit-count
     # - events: capped collection for short-term filename,lineno events
