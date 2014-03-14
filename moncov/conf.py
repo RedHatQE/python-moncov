@@ -3,7 +3,6 @@ import logging
 import re
 import pymongo
 
-logging.basicConfig()
 log = logging.getLogger(__name__)
 
 try:
