@@ -393,7 +393,8 @@ def generate_xml(dbhost = "localhost", dbport = 27017, dbname = 'moncov', output
     connection=pymongo.connection.Connection(dbhost, dbport)
     db=pymongo.database.Database(connection, dbname)
     cursor=list(db.lines.find())
-    cursor_grouped = db.lines.aggregate([{"$group": {"_id": "$file", "lines": {"$addToSet": "$line"}}}])
+    cursor_grouped = db.lines.aggregate([{"$group": {"_id": "$_id.file",
+        "lines": {"$addToSet": "$_id.line"}}}])
 
 
 
