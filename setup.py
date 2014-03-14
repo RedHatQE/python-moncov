@@ -11,7 +11,7 @@ setup(name='moncov',
     url='https://github.com/RedHatQE/python-moncov',
     license="GPLv3+",
     provides=['moncov'],
-    install_requires=['pymongo', 'aaargh', 'PyYAML'],
+    install_requires=['pymongo', 'aaargh', 'PyYAML', 'python-daemon'],
     packages=[
         'moncov',
         'moncov/stats'

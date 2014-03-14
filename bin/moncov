@@ -10,7 +10,7 @@ import sys
 import logging
 import functools
 
-logging.basicConfig()
+logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__file__)
 
 
@@ -75,12 +75,37 @@ def simple(dbhost, dbport, dbname, whitelist, blacklist):
     db = moncov.conf.get_db(dbhost=dbhost, dbport=dbport, dbname=dbname)
     moncov.stats.simple.print_stats(db=db, whitelist=whitelist, blacklist=blacklist)
 
+
 @catching
 @app.cmd(help='calculate stats updates')
+@app.cmd_arg('-s', '--daemon', help='fork a collecting daemon', action='store_true', default=False)
+@app.cmd_arg('-t', '--sleep_interval', help='sleep interval of the background updater process', type=float, default=3)
+@app.cmd_arg('-u', '--logfile', help='filename the daemon should log actions to''', default='/tmp/moncov_updater.log')
+@app.cmd_arg('-v', '--pidfile', help='filename the daemon should use as lock; no locking if omitted''', default=None)
 @catching
-def update(dbhost, dbport, dbname):
+def update(dbhost, dbport, dbname, daemon, sleep_interval, logfile, pidfile):
     db = moncov.conf.get_db(dbhost=dbhost, dbport=dbport, dbname=dbname)
     moncov.stats.update.update(db=db)
+    if daemon:
+        def updater():
+            import moncov; moncov.ctl.disable()
+            import time
+            import daemon
+            import logging
+            import sys
+            logging.basicConfig(filename=logfile, level=logging.INFO)
+            with daemon.DaemonContext(pidfile=pidfile):
+                while True:
+                    try:
+                        moncov.stats.update.update(db=db)
+                        time.sleep(sleep_interval)
+                    except Exception as e:
+                        logging.error("exiting with error: %r" % e)
+                        sys.exit(2)
+        import os
+        pid = os.fork()
+        if not pid:
+            updater()
 
 if __name__ == '__main__':
     app.run()
