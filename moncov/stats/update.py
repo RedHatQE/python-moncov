@@ -1,5 +1,7 @@
 import moncov
 import pymongo
+import logging
+log = logging.getLogger(__name__)
 
 #  => {_id: {file: <path>, line: <lineno>}, value: <hit-count>}
 _MAP = '''function(){emit({file: this.file, line: this.line}, 1)}'''
@@ -46,6 +48,7 @@ def update(db=None):
     # update the hit-counts, "merge-back" with reduce
     response = db.events.map_reduce(map=_MAP, reduce=_REDUCE, query=query,
             out={'reduce': 'lines'}, full_response=True)
+    log.info(response)
     #import pprint
     #print pprint.pformat(response)
 
