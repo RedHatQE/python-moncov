@@ -1,5 +1,5 @@
 Name:		python-moncov
-Version:	0.5.5
+Version:	0.5.6
 Release:	1%{?dist}
 Summary:	Python code coverage using MongoDB
 
@@ -58,6 +58,47 @@ fi
 %{_bindir}/moncov
 
 %changelog
+* Sat Mar 15 2014 Unknown name 0.5.6-1
+- Update README.md (vetrisko@gmail.com)
+- fix: adopting the key shape change (vetrisko@gmail.com)
+- fix: logging (vetrisko@gmail.com)
+- introducing an updater daemon (vetrisko@gmail.com)
+- merging drop&init into reset (vetrisko@gmail.com)
+- introducing race test cases (vetrisko@gmail.com)
+- introducing config parameters (vetrisko@gmail.com)
+- result info logging (vetrisko@gmail.com)
+- introducing get_dbdetails (vetrisko@gmail.com)
+- introducing basic test cases (vetrisko@gmail.com)
+- fix requires explicit init call (vetrisko@gmail.com)
+- fix: disabling disabling (vetrisko@gmail.com)
+- enable in medias res counting (vetrisko@gmail.com)
+- moving initialization code (vetrisko@gmail.com)
+- return the collector object (vetrisko@gmail.com)
+- logging (vetrisko@gmail.com)
+- fixes (vetrisko@gmail.com)
+- fix import error (vetrisko@gmail.com)
+- fix call signature (vetrisko@gmail.com)
+- new call interface (vetrisko@gmail.com)
+- introducing explicit db inint (vetrisko@gmail.com)
+- fix: count the calls, too (vetrisko@gmail.com)
+- fix: exit when there's nothing to count (vetrisko@gmail.com)
+- allow custom collecting properties (vetrisko@gmail.com)
+- allow custom collecting properties (vetrisko@gmail.com)
+- fix comment (vetrisko@gmail.com)
+- fix: order inversion issue (vetrisko@gmail.com)
+- Update README.md (vetrisko@gmail.com)
+- fix race in between find last event and update last event record
+  (vetrisko@gmail.com)
+- fix race in between find last event and update last event record
+  (vetrisko@gmail.com)
+- Fix: concurrent counting (vetrisko@gmail.com)
+- fix: create collection function name (vetrisko@gmail.com)
+- fix: off-by-one (vetrisko@gmail.com)
+- fix missing update module import and ctl call (vetrisko@gmail.com)
+- fix: exception message display (vetrisko@gmail.com)
+- introducing hits counting (vetrisko@gmail.com)
+- introducing hit-counts (vetrisko@gmail.com)
+
 * Wed Mar 12 2014 dparalen <vetrisko@gmail.com> 0.5.5-1
 - introducing cobertura moncov output (igulina@redhat.com)
 - Introducing output filename (igulina@redhat.com)
