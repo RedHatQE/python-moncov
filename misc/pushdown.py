@@ -225,11 +225,11 @@ class Visitor(ast.NodeVisitor):
         super(Visitor, self).generic_visit(node.test)
         self.pda(IFB)
         for sub_node in node.body:
-            super(Visitor, self).generic_visit(sub_node)
-        if node.orelse is not None:
+            self.visit(sub_node)
+        if node.orelse:
             self.pda(IFO)
             for sub_node in node.orelse:
-                super(Visitor, self).generic_visit(sub_node)
+                self.visit(sub_node)
         self.pda(IFX)
 
     def generic_visit(self, node, events=(O_E, O_X)):
