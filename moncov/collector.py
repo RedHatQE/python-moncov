@@ -15,7 +15,7 @@ class Collector(object):
     # the top, and resumed when they become the top again.
 
     def __init__(self, db=None, dbhost=None, dbport=None, dbname=None,
-                whitelist=None, blacklist=None):
+                whitelist=[], blacklist=[]):
         self.tracers = []
         self._trace_class = PyTracer
         from conf import (DBHOST, DBPORT, DBNAME, BLACKLIST, WHITELIST)
