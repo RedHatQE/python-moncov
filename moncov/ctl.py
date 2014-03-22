@@ -53,6 +53,7 @@ def init(db=None, dbhost=conf.DBHOST, dbport=conf.DBPORT, dbname=conf.DBNAME,
     except pymongo.errors.CollectionInvalid as e:
         # already has such collection; ok
         log.info("Events collection already present in %r: %r" % (db, e))
+    return db
 
 def get_collecting_code(dbhost, dbport, dbname, whitelist, blacklist):
     '''return the code to use for coverage collecting initialization from a pth file'''
