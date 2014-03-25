@@ -105,6 +105,9 @@ def print_stats(db=None, whitelist=None, blacklist=None):
     print "# filename: linerate, branchrate"
     for doc in cursor_grouped['result']:
         filename = doc['_id']
+        if not filename:
+            # happens when the db is broken
+            continue
         if not any([pattern.match(filename) for pattern in whitelist]) or \
             any([pattern.match(filename) for pattern in blacklist]):
             continue
