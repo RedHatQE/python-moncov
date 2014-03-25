@@ -3,6 +3,7 @@ import moncov
 import ast
 import sys
 import fractions
+import collections
 
 class Rate(fractions.Fraction):
     def __or__(self, other):
@@ -94,43 +95,57 @@ class Visitor(ast.NodeVisitor):
         self.stack[-1] = value
 
 
+FileStatus = collections.namedtuple('FileStatus', ['filename',
+                'branch_rate', 'line_rate'])
+FileErrorStatus = collections.namedtuple('FileErrorStatus', ['filename', 'error'])
 
-def print_stats(db=None, whitelist=None, blacklist=None):
+def get_stats(db=None, whitelist=None, blacklist=None):
     if db is None:
         db = moncov.conf.get_db()
     whitelist = moncov.conf.get_whitelist(whitelist)
     blacklist = moncov.conf.get_blacklist(blacklist)
     cursor_grouped = db.lines.aggregate([{"$group": {"_id": "$_id.file",
         "lines": {"$addToSet": {"line": "$_id.line", "value":  "$value"}}}}])
-    print "# filename: linerate, branchrate"
+    stats = []
     for doc in cursor_grouped['result']:
         filename = doc['_id']
         if not filename:
             # happens when the db is broken
+            stats.append(FileErrorStatus(filename=filename, error=ValueError('no-filename')))
             continue
         if not any([pattern.match(filename) for pattern in whitelist]) or \
             any([pattern.match(filename) for pattern in blacklist]):
-            continue
-        print "%s" % filename,
-        if str(filename).startswith('<'):
-            print "...not a *.py file"
+            stats.append(FileErrorStatus(filename=filename, error=ValueError('filtered-away')))
             continue
         try:
             with open(filename) as fd:
                 src = fd.read()
         except Exception as e:
-            print "...can't read file: %r" % e
+            stats.append(FileErrorStatus(filename=filename, error=e))
             continue
         try:
             tree = ast.parse(src)
         except Exception as e:
-            print "...has syntax errors: %r" % e
+            stats.append(FileErrorStatus(filename=filename, error=e))
             continue
         visitor = Visitor(hit_count=dict([(int(pair['line']),
             int(pair['value'])) for pair in doc['lines']]))
         visitor.visit(tree)
-        print ": %1.2f, %1.2f" % \
-                (visitor.top.line_rate, visitor.top.branch_rate)
+        stats.append(FileStatus(filename=filename, line_rate=visitor.top.line_rate,
+                        branch_rate=visitor.top.branch_rate))
+    return stats
+
+def print_stats(db=None, whitelist=None, blacklist=None):
+    stats = get_stats(db=db, whitelist=whitelist, blacklist=blacklist)
+    print "# filename, linerate, branchrate"
+    for file_status in stats:
+        if isinstance(file_status, FileStatus):
+            print "%s: %1.2f, %1.2f" % (file_status.filename, file_status.line_rate,
+                    file_status.branch_rate)
+        elif isinstance(file_status, FileErrorStatus):
+            print "# %s: %r" % (file_status.filename, file_status.error)
+        else:
+            print "# bad file_status: %r" % file_status
 
 if __name__ == '__main__':
     print_stats()
