@@ -1,6 +1,8 @@
 import moncov
 import unittest
 import inspect
+from fractions import Fraction
+
 
 
 class MoncovTest(unittest.TestCase):
@@ -70,4 +72,45 @@ class MoncovTest(unittest.TestCase):
         response = self.db.lines.find_one({'_id.file': filename, '_id.line': lineno})
         assert response is not None
         self.assertEqual(response['value'], 1)
+
+    def test_04_no_data_to_measure_stats(self):
+        def tmp(value):
+            if value:
+                pass
+        moncov.ctl.enable(db=self.db)
+        moncov.ctl.disable()
+        moncov.stats.update.update(self.db)
+        result = moncov.stats.simple.get_stats(db = self.db)
+        assert result == [], "nothing to measure"
+        
+    def test_05__50percent_branch_rate(self):
+        def tmp(value):
+            if value:
+                pass
+        moncov.ctl.enable(db=self.db)
+        tmp(True); 
+        moncov.ctl.disable()
+        moncov.stats.update.update(self.db)
+        result = moncov.stats.simple.get_stats(db = self.db)
+        assert len(result) == 1, "just a single file measured"
+        status = result[0]
+        self.assertEqual(status.branch_rate, Fraction(1,2))
+
+        
+    def test_06__100percent_branch_rate(self):
+        def tmp(value):
+            if value:
+                pass
+        moncov.ctl.enable(db=self.db)
+        tmp(True); tmp(False)
+        moncov.ctl.disable()
+        moncov.stats.update.update(self.db)
+        result = moncov.stats.simple.get_stats(db = self.db)
+        assert len(result) == 1, "just a single file measured"
+        status = result[0]
+        self.assertEqual(status.branch_rate, Fraction(1,1))
+
+        
+
+
 
