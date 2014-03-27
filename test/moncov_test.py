@@ -109,6 +109,33 @@ class MoncovTest(unittest.TestCase):
         assert len(result) == 1, "just a single file measured"
         status = result[0]
         self.assertEqual(status.branch_rate, Fraction(1,1))
+        
+    def test_07__50percent_line_rate(self):
+        def tmp(value):
+            if value:
+                pass
+        moncov.ctl.enable(db=self.db)
+        tmp(False) 
+        moncov.ctl.disable()
+        moncov.stats.update.update(self.db)
+        result = moncov.stats.simple.get_stats(db = self.db)
+        assert len(result) == 1, "just a single file measured"
+        status = result[0]
+        self.assertEqual(status.line_rate, Fraction(1,2))
+
+        
+    def test_08__100percent_line_rate(self):
+        def tmp(value):
+            if value:
+                pass
+        moncov.ctl.enable(db=self.db)
+        tmp(True)
+        moncov.ctl.disable()
+        moncov.stats.update.update(self.db)
+        result = moncov.stats.simple.get_stats(db = self.db)
+        assert len(result) == 1, "just a single file measured"
+        status = result[0]
+        self.assertEqual(status.line_rate, Fraction(1,1))
 
         
 
