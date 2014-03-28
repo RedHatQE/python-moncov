@@ -3,6 +3,7 @@ import moncov
 import ast
 import sys
 import fractions
+from fractions import Fraction
 import collections
 
 class Rate(fractions.Fraction):
@@ -12,11 +13,10 @@ class Rate(fractions.Fraction):
                         self.denominator + other.denominator)
 
 class Status(object):
-    def __init__(self, lineno=0, lines=set(), hits=set(), line_rate=Rate(1,1),
+    def __init__(self, lineno=0, lines=set(), hits=set(), 
             branch_rate=Rate(1, 1)):
         self.lineno = lineno
         self.lines = lines
-        self.line_rate = line_rate
         self.branch_rate = branch_rate
         self.hits = hits
 
@@ -35,7 +35,7 @@ class Status(object):
         self.lines |= other.lines
         self.hits |= other.hits
         self.branch_rate = self.branch_rate | other.branch_rate
-        self.line_rate = self.line_rate | other.line_rate
+
 
     def __repr__(self):
         return '%r(%r, lines=%r, hits=%r, line_rate=%r, branch_rate=%r)' % (
@@ -79,11 +79,7 @@ class Visitor(ast.NodeVisitor):
         if hasattr(node, 'lineno'):
             # a line-node
             self.top.lines.add(node.lineno)
-            if node.lineno in self.hits:
-                # executed line
-                self.top.line_rate |= Rate(1, 1)
-            else:
-                self.top.line_rate |= Rate(0, 1)
+
         super(Visitor, self).generic_visit(node)
 
     @property
@@ -131,7 +127,8 @@ def get_stats(db=None, whitelist=None, blacklist=None):
         visitor = Visitor(hit_count=dict([(int(pair['line']),
             int(pair['value'])) for pair in doc['lines']]))
         visitor.visit(tree)
-        stats.append(FileStatus(filename=filename, line_rate=visitor.top.line_rate,
+
+        stats.append(FileStatus(filename=filename, line_rate=Fraction(len(doc['lines']), len(visitor.top.lines)-1),
                         branch_rate=visitor.top.branch_rate))
     return stats
 
