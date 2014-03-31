@@ -1,7 +1,8 @@
-#!/usr/bin/pytho
+#!/usr/bin/python
 import ast
 import collections
 import sys
+import fractions
 
 # *_[EX] events: Enter eXit
 M_E = 'M_E' # Module
@@ -53,7 +54,7 @@ TBL = {
         (C_X, C_E): NOOP(),           # leaving any nested function
         (C_E, IFB): PUSH([IFB, C_E]), # entering class definition within if.body
         (C_E, IFO): PUSH([IFO, C_E]), # entering class definition within if.orelse
-        
+
         (O_E, BTT): PUSH([BTT, O_E]), # entering other module-level statement
         (O_E, FTT): PUSH([FTT, O_E]), # entering other method-level statement
         (O_E, CTT): PUSH([CTT, O_E]), # entering other regular-class-level statement
@@ -106,86 +107,148 @@ class PushDownAutomaton(object):
         self.callbacks[(event, stack_event)](event, stack_event)
         # perform stack manipulation based on the transition table
         self.stack = TBL[(event, stack_event)](self.stack)
-        import pprint
+        #import pprint
         #print pprint.pformat(self.stack), event
 
 
-class Line(object):
-    prefix = " "
-    def __init__(self, node, depth=0):
-        self.node = node
-        self.depth = depth
-
-    def __repr__(self):
-        return type(self).__name__ + "(%r, depth=%r)" % (self.node, self.depth)
-        print self
-
-    def __str__(self):
-        return self.prefix * self.depth + type(self).__name__ + ": %s" % self.node.lineno
-
-    def __call__(self, node):
-        '''print line in case node linenos differ; update self.node'''
-        if not hasattr(self.node, "lineno"):
-            lineno = 0
-        else:
-            lineno = self.node.lineno
-        if not hasattr(node, "lineno"):
-            return
-        if lineno != node.lineno:
-           # new line
-           self.node = node
-           print self
-
-class ModuleLine(Line):
-    pass
-class ClassLine(Line):
-    pass
-
-class MethodLine(Line):
-    pass
-
-class IfLine(Line):
-    pass
-
-class LineStatus(object):
-    def __init__(self):
-        self.set_stack = []
+class Stack(object):
+    def __init__(self, data=[]):
+        self.data = data
 
     @property
-    def top_set(self):
-        return self.set_stack[-1]
+    def top(self):
+        return self.data[-1]
 
-    @top_set.setter
-    def top_set(self, other):
-        self.set_stack[-1] = other
+    @top.setter
+    def top(self, other):
+        self.data[-1] = other
 
     @property
     def depth(self):
-        return len(self.set_stack)
+        return len(self.data)
 
-    def push_set(self):
-        self.set_stack.append(set())
+    def push(self, item):
+        self.data.append(item)
 
-    def pop_set(self):
-        return self.set_stack.pop()
+    def pop(self):
+        return self.data.pop()
 
-    def add_line(self, lineno):
-        self.top_set.add(lineno)
+
+class Rate(fractions.Fraction):
+
+    def __new__(cls, numerator=0, denominator=None):
+        '''avoid reduction'''
+        self = super(Rate, cls).__new__(cls, numerator, denominator)
+        if denominator is None:
+            return self
+        gcd = fractions.gcd(numerator, denominator)
+        self._numerator *= gcd
+        self._denominator *= gcd
+        return self
+
+    def __or__(self, other):
+        '''grow the portion and the pie size'''
+        return type(self)(self.numerator + other.numerator,
+                        self.denominator + other.denominator)
+
+    def __and__(self, other):
+        '''grow the portion and pie size if both self and other are not zero'''
+        if self != 0 and other != 0:
+            return self | other
+        elif self == 0 and other != 0:
+            return other
+        elif self !=0 and other == 0:
+            return self
+        else:
+            return Rate(0)
+
+
+    def __repr__(self):
+        return '%s(%r, %r)' % (type(self).__name__, self.numerator, self.denominator)
+
+    @classmethod
+    def as_fraction(cls, rate):
+        '''return a fraction created out of a rate instance'''
+        return fractions.Fraction(rate.numerator, rate.denominator)
+
+
+Line = collections.namedtuple('Line', ['lineno'])
+IfLine = collections.namedtuple('IfLine', ['lineno'])
+MethodLine = collections.namedtuple('MethodLine', ['lineno'])
+ClassLine = collections.namedtuple('ClassLine', ['lineno'])
+ModuleLine = collections.namedtuple('ModuleLine', ['lineno'])
+
+class Status(object):
+    lineno = None
+    linetype = None
+    lines = None
+    line_rate = None
+    branch_rate = None
+    hits = None
+    linetype = None
+    def __init__(self, lineno=0, lines=set(), hits=set(), line_rate=Rate(0),
+            branch_rate=Rate(0), linetype=ModuleLine):
+        self.linetype = linetype
+        self.lineno = lineno
+        self.lines = lines
+        self.line_rate = line_rate
+        self.branch_rate = branch_rate
+        self.hits = hits
 
     @property
-    def info(self):
-        return self.depth * " " + "...total %r lines" % len(self.top_set)
+    def lines(self):
+        return self._lines
+
+    @lines.setter
+    def lines(self, other_set):
+        # ensure self.lineno is kept in the set
+        self._lines = other_set
+        self._lines.add(self.line)
+
+    def merge(self, other):
+        # merge statuses <<=
+        assert type(self) is type(other)
+        self.lines |= other.lines
+        self.hits |= other.hits
+        self.branch_rate &= other.branch_rate
+        self.line_rate |= other.line_rate
+
+    @property
+    def line(self):
+        return self.linetype(lineno=self.lineno)
+
+    def add_line(self, lineno):
+        '''add another line and update line rate'''
+        line = self.linetype(lineno)
+        if line in self.lines:
+            # already counted
+            return
+        if lineno in self.hits:
+            # executed line
+            self.line_rate |= Rate(1, 1)
+        else:
+            self.line_rate |= Rate(0, 1)
+        self.lines.add(line)
+
+    def __repr__(self):
+        return '%r(lineno=%r, lines=%r, hits=%r, line_rate=%r, branch_rate=%r)' % (
+                type(self), self.lineno, self.lines, self.hits, self.line_rate,
+                self.branch_rate)
+
+    def __str__(self):
+        return 'Status: line_rate = %s, branch_rate = %s' % (self.line_rate, self.branch_rate)
+
 
 class Visitor(ast.NodeVisitor):
 
-    def __init__(self, *args, **kvs):
+    def __init__(self, hit_count={}):
         callbacks = {
             (M_E, BTT): self.init_module,
             (M_X, BTT): self.exit_module,
             (C_E, BTT): self.init_class,
             (F_E, CTT): self.init_method,
-            (C_X, CTT): self.exit_class,
-            (F_X, FTT): self.exit_method,
+            (C_X, CTT): self.exit_nested,
+            (F_X, FTT): self.exit_nested,
             (IFT, BTT): self.init_if,
             (IFT, CTT): self.init_if,
             (IFT, FTT): self.init_if,
@@ -195,20 +258,26 @@ class Visitor(ast.NodeVisitor):
             (IFT, IFT): self.init_if,
             (IFT, IFB): self.init_if,
             (IFT, IFO): self.init_if,
-            (IFX, IFB): self.exit_if,
-            (IFX, IFO): self.exit_if,
+            (IFX, IFB): self.exit_nested,
+            (IFX, IFO): self.exit_nested,
 
         }
         self.callbacks = collections.defaultdict( \
             lambda: self.line_handler,
             callbacks.items()
         )
-        self.node = None
-        self.line = None
         self.pda = PushDownAutomaton(callbacks=self.callbacks)
-        self.line_status = LineStatus()
-        super(Visitor, self).__init__(*args, **kvs)
-        
+        self.node = None
+        # hit_count is a mapping: lineno->line_hits
+        self.hit_count = hit_count
+        # set of lines explored during parsing
+        self.lines = set()
+        # all hit/executed lines
+        self.hits = set(self.hit_count.keys())
+        self.report = None
+
+        super(Visitor, self).__init__()
+
     def visit_Module(self, node):
         self.generic_visit(node, (M_E, M_X))
 
@@ -222,14 +291,14 @@ class Visitor(ast.NodeVisitor):
         # need to distinguish between test/body/orelse if statement subtrees
         self.node = node
         self.pda(IFT)
-        super(Visitor, self).generic_visit(node.test)
+        self.visit(node.test)
         self.pda(IFB)
         for sub_node in node.body:
             self.visit(sub_node)
         if node.orelse:
             self.pda(IFO)
-            for sub_node in node.orelse:
-                self.visit(sub_node)
+        for sub_node in node.orelse:
+            self.visit(sub_node)
         self.pda(IFX)
 
     def generic_visit(self, node, events=(O_E, O_X)):
@@ -240,49 +309,32 @@ class Visitor(ast.NodeVisitor):
         self.pda(events[1])
 
     def line_handler(self, event, stack_event):
-        self.line(self.node)
         if hasattr(self.node, 'lineno'):
-            self.line_status.add_line(self.node.lineno)
+            self.report.top.add_line(self.node.lineno)
 
     def init_module(self, event, stack_event):
-        print "Module:"
-        self.line_status.push_set()
-        self.line = ModuleLine(self.node)
+        self.report = Stack([Status(lineno=0, hits=self.hits, linetype=ModuleLine)])
 
     def exit_module(self, event, stack_event):
-        print self.line_status.info
-        self.line_status.pop_set()
-        self.line(self.node)
+        pass
 
     def init_class(self, event, stack_event):
-        print " Class: %s at %s" % (self.node.name, self.node.lineno)
-        self.line_status.push_set()
-        self.line = ClassLine(self.node, self.line_status.depth)
+        self.report.push(Status(lineno=self.node.lineno, hits=self.hits, linetype=ClassLine))
 
-    def exit_class(self, event, stack_event):
-        print self.line_status.info
-        self.line_status.pop_set()
-        self.line = ModuleLine(self.node, self.line_status.depth)
+    def exit_nested(self, event, stack_event):
+        status = self.report.pop()
+        self.report.top.merge(status)
 
     def init_method(self, event, stack_event):
-        print "  Method: %s at %s" % (self.node.name, self.node.lineno)
-        self.line_status.push_set()
-        self.line = MethodLine(self.node, self.line_status.depth)
-
-    def exit_method(self, event, stack_event):
-        print self.line_status.info
-        self.line_status.pop_set()
-        self.line = ClassLine(self.node, self.line_status.depth)
+        self.report.push(Status(lineno=self.node.lineno, hits=self.hits, linetype=MethodLine))
 
     def init_if(self, event, stack_event):
-        self.line = IfLine(self.node, self.line_status.depth)
-        self.line_status.push_set()
-        pass
+        self.report.push(Status(lineno=self.node.lineno, hits=self.hits, linetype=IfLine, branch_rate=Rate(1, 2)))
 
-    def exit_if(self, event, stack_event):
-        print self.line_status.info
-        self.line_status.pop_set()
-        pass
+    @property
+    def status(self):
+        '''return top of self.report stack'''
+        return self.report.top
 
 
 ###
@@ -294,9 +346,13 @@ except Exception as e:
     sys.exit(2)
 
 tree = ast.parse(src)
-print src
+#print src
 #import astpp
 #print astpp.dump(tree, annotate_fields=True, include_attributes=True)
-visitor = Visitor()
+visitor = Visitor(hit_count={66: 3})
 visitor.visit(tree)
+
+import pprint
+print pprint.pformat(visitor.status.lines), len(visitor.status.lines)
+print visitor.status
 
