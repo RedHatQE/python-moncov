@@ -28,7 +28,6 @@ class Status(object):
         assert type(self) is type(other)
         self.lines |= other.lines
         self.hits |= other.hits
-
         self.branch_rate = [self.branch_rate[0] + other.branch_rate[0], self.branch_rate[1] + other.branch_rate[1]]
         
 
