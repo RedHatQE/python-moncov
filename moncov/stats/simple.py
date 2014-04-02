@@ -6,18 +6,12 @@ import fractions
 from fractions import Fraction
 import collections
 
-class Rate(fractions.Fraction):
-    def __or__(self, other):
-        '''grow the ratio and the pie size'''
-        return type(self)(self.numerator + other.numerator,
-                        self.denominator + other.denominator)
 
 class Status(object):
-    def __init__(self, lineno=0, lines=set(), hits=set(), 
-            branch_rate=Rate(1, 1)):
+    def __init__(self, lineno=0, lines=set(), hits=set(), branch_rate=None):
         self.lineno = lineno
         self.lines = lines
-        self.branch_rate = branch_rate
+        self.branch_rate = branch_rate or [0, 0]
         self.hits = hits
 
     @property
@@ -34,42 +28,53 @@ class Status(object):
         assert type(self) is type(other)
         self.lines |= other.lines
         self.hits |= other.hits
-        self.branch_rate = self.branch_rate | other.branch_rate
 
+        self.branch_rate = [self.branch_rate[0] + other.branch_rate[0], self.branch_rate[1] + other.branch_rate[1]]
+        
 
     def __repr__(self):
-        return '%r(%r, lines=%r, hits=%r, line_rate=%r, branch_rate=%r)' % (
-                type(self), self.lineno, self.lines, self.hits, self.line_rate,
-                self.branch_rate)
+        return '%r(%r, lines=%r, hits=%r, branch_rate=%r)' % (
+                type(self), self.lineno, self.lines, self.hits, self.branch_rate)
 
 class Visitor(ast.NodeVisitor):
-    def __init__(self, hit_count={}):
+
+    def __init__(self, hit_count={}, branch_rate=None):
         # hit_count is a mapping: lineno->line_hits
         self.hit_count = hit_count
         # set of lines explored during parsing
         self.lines = set()
         # all hit/executed lines
         self.hits = set(self.hit_count.keys())
-        self.stack = [Status(lineno=0, hits=self.hits)]
+        self.branch_rate = branch_rate or [0,0]
+        self.stack = [Status(lineno=0, hits=self.hits, branch_rate=self.branch_rate)]
         super(Visitor, self).__init__()
 
     def visit_If(self, node):
         # need to distinguish between test/body/orelse if statement subtrees
         # the default branch rate of an if/test statement is 1/2
         self.stack.append(Status(node.lineno, lines=self.lines,
-            hits=self.hits, branch_rate=Rate(1, 2)))
+            hits=self.hits, branch_rate=self.branch_rate))
+            
         self.visit(node.test)
         for sub_node in node.body:
             self.visit(sub_node)
         for sub_node in node.orelse:
             self.visit(sub_node)
         current = self.stack.pop()
-        if node.lineno in self.hit_count and \
-                self.hit_count[node.lineno] > max([self.hit_count[line] for line in
-                current.lines if line in self.hit_count]):
-            # there were some executions with negative test outcome
-            # thus the branch_rate is 2 of 2 i.e. 1/1
-            currnent.branch_rate = Rate(1, 1)
+        
+        
+        if node.lineno in self.hit_count:
+                
+            hits = ([self.hit_count[line] for line in
+            current.lines-set([node.lineno]) if line in self.hit_count])
+                
+            if hits != [] and (self.hit_count[node.lineno] > max(hits)):
+                self.branch_rate = [self.branch_rate[0]+2, self.branch_rate[1]+2]
+
+            else:
+                self.branch_rate = [self.branch_rate[0]+1, self.branch_rate[1]+2]
+      
+        current.branch_rate = self.branch_rate
         self.top.merge(current)
 
     #visit_IfExp = visit_If
@@ -101,10 +106,12 @@ def get_stats(db=None, whitelist=None, blacklist=None):
     whitelist = moncov.conf.get_whitelist(whitelist)
     blacklist = moncov.conf.get_blacklist(blacklist)
     cursor_grouped = db.lines.aggregate([{"$group": {"_id": "$_id.file",
-        "lines": {"$addToSet": {"line": "$_id.line", "value":  "$value"}}}}])
+        "lines": {"$addToSet": {"line": "$_id.line", "value": "$value"}}}}])
     stats = []
     for doc in cursor_grouped['result']:
+
         filename = doc['_id']
+        
         if not filename:
             # happens when the db is broken
             stats.append(FileErrorStatus(filename=filename, error=ValueError('no-filename')))
@@ -128,8 +135,13 @@ def get_stats(db=None, whitelist=None, blacklist=None):
             int(pair['value'])) for pair in doc['lines']]))
         visitor.visit(tree)
 
-        stats.append(FileStatus(filename=filename, line_rate=Fraction(len(doc['lines']), len(visitor.top.lines)-1),
-                        branch_rate=visitor.top.branch_rate))
+        if visitor.branch_rate[1] != 0:
+            branch_rate = float(visitor.branch_rate[0])/visitor.branch_rate[1]
+        else:
+            branch_rate = 0
+    
+        stats.append(FileStatus(filename=filename, line_rate=float(len(doc['lines']))/(len(visitor.top.lines)-1), branch_rate=branch_rate))
+
     return stats
 
 def print_stats(db=None, whitelist=None, blacklist=None):
