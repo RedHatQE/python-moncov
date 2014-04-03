@@ -64,10 +64,9 @@ class Visitor(ast.NodeVisitor):
         
         if node.lineno in self.hit_count:
                 
-            hits = ([self.hit_count[line] for line in
+            hits = set([self.hit_count[line] for line in
             current.lines-set([node.lineno]) if line in self.hit_count])
-                
-            if hits != [] and (self.hit_count[node.lineno] > max(hits)):
+            if hits and (self.hit_count[node.lineno] > max(hits)):
                 self.branch_rate = [self.branch_rate[0]+2, self.branch_rate[1]+2]
 
             else:
