@@ -29,7 +29,8 @@ class Collector(object):
             self.dbname = db.name
         self.blacklist = [re.compile(regexp) for regexp in blacklist] or BLACKLIST
         self.whitelist = [re.compile(regexp) for regexp in whitelist] or WHITELIST
-        log.info('using: %(dbhost)r, %(dbport)r, %(dbname)r, %(whitelist)r, %(blacklist)r' % self.__dict__)
+        log.info('using: %r, %r, %r, %r, %r' % (self.dbhost, self.dbport, self.dbname,
+                    [x.pattern for x in self.whitelist], [x.pattern for x in self.blacklist]))
 
 
     def __repr__(self):
