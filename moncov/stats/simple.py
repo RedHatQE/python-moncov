@@ -29,7 +29,7 @@ class Status(object):
         self.lines |= other.lines
         self.hits |= other.hits
         self.branch_rate = [self.branch_rate[0] + other.branch_rate[0], self.branch_rate[1] + other.branch_rate[1]]
-        
+
 
     def __repr__(self):
         return '%r(%r, lines=%r, hits=%r, branch_rate=%r)' % (
@@ -53,29 +53,75 @@ class Visitor(ast.NodeVisitor):
         # the default branch rate of an if/test statement is 1/2
         self.stack.append(Status(node.lineno, lines=self.lines,
             hits=self.hits, branch_rate=self.branch_rate))
-            
+
         self.visit(node.test)
         for sub_node in node.body:
             self.visit(sub_node)
         for sub_node in node.orelse:
             self.visit(sub_node)
         current = self.stack.pop()
-        
-        
-        if node.lineno in self.hit_count:
-                
+
+
+        if node.test.lineno in self.hit_count:
+
             hits = set([self.hit_count[line] for line in
-            current.lines-set([node.lineno]) if line in self.hit_count])
-            if hits and (self.hit_count[node.lineno] > max(hits)):
+            current.lines-set([node.test.lineno]) if line in self.hit_count])
+            if hits and (self.hit_count[node.test.lineno] > max(hits)):
                 self.branch_rate = [self.branch_rate[0]+2, self.branch_rate[1]+2]
 
             else:
                 self.branch_rate = [self.branch_rate[0]+1, self.branch_rate[1]+2]
-      
+
         current.branch_rate = self.branch_rate
         self.top.merge(current)
 
-    #visit_IfExp = visit_If
+    def visit_For(self, node):
+        self.stack.append(Status(node.lineno, lines=self.lines,
+                hits=self.hits, branch_rate=self.branch_rate))
+        self.visit(node.target)
+        self.visit(node.iter)
+        for sub_node in node.body:
+            self.visit(sub_node)
+        for sub_node in node.orelse:
+            self.visit(sub_node)
+        current = self.stack.pop()
+        if node.iter.lineno in self.hit_count:
+            # this For node was executed indeed
+            hits = set([self.hit_count[line] for line in current.lines -
+                        set([node.iter.lineno]) if line in self.hit_count])
+            if hits and self.hit_count[node.iter.lineno] > max(hits) + 1:
+                # the For node test part was visited more times than the body
+                # the +1 term is necessary as even with empty iterator there
+                # are always 2 hits when the iterator is being wisited and rises
+                # StopIteration
+                self.branch_rate = [self.branch_rate[0]+2, self.branch_rate[1]+2]
+            else:
+                self.branch_rate = [self.branch_rate[0]+1, self.branch_rate[1]+2]
+        current.branch_rate = self.branch_rate
+        self.top.merge(current)
+
+    def visit_While(self, node):
+        self.stack.append(Status(node.lineno, lines=self.lines,
+            hits=self.hits, branch_rate=self.branch_rate))
+        self.visit(node.test)
+        for sub_node in node.body:
+            self.visit(sub_node)
+        for sub_node in node.orelse:
+            self.visit(sub_node)
+        current = self.stack.pop()
+        if node.test.lineno in self.hit_count:
+            hits = set([self.hit_count[line] for line in current.lines -
+                        set([node.test.lineno]) if line in self.hit_count])
+            if hits and (self.hit_count[node.test.lineno] > max(hits) + 1):
+                # the +1 term is necessary to get 2/2 when
+                # while False; while "Some" both have been encountered
+                self.branch_rate = [self.branch_rate[0]+2, self.branch_rate[1]+2]
+
+            else:
+                self.branch_rate = [self.branch_rate[0]+1, self.branch_rate[1]+2]
+
+        current.branch_rate = self.branch_rate
+        self.top.merge(current)
 
     def generic_visit(self, node):
         # update top status node
@@ -109,7 +155,7 @@ def get_stats(db=None, whitelist=None, blacklist=None):
     for doc in cursor_grouped['result']:
 
         filename = doc['_id']
-        
+
         if not filename:
             # happens when the db is broken
             stats.append(FileErrorStatus(filename=filename, error=ValueError('no-filename')))
@@ -137,7 +183,7 @@ def get_stats(db=None, whitelist=None, blacklist=None):
             branch_rate = float(visitor.branch_rate[0])/visitor.branch_rate[1]
         else:
             branch_rate = 0
-    
+
         stats.append(FileStatus(filename=filename, line_rate=float(len(doc['lines']))/(len(visitor.top.lines)-1), branch_rate=branch_rate))
 
     return stats
