@@ -6,37 +6,11 @@ import contextlib
 import logging
 import pprint
 from fractions import Fraction
+from tools import (traced, get_pyfilename_whitelist)
 
 
 log = logging.getLogger(__name__)
 
-
-@contextlib.contextmanager
-def tracing(db=None, whitelist=None, blacklist=None):
-    '''context manager that enables moncov tracing'''
-    collector = moncov.ctl.enable(db=db, whitelist=whitelist, blacklist=blacklist)
-    try:
-        yield collector
-    finally:
-        moncov.ctl.disable()
-        log.debug('%r events:' % db)
-        for event in db.events.find():
-            log.debug('  %r' % event)
-        moncov.stats.update.update(db=db)
-        log.debug('%r lines:' % db)
-        for line in db.lines.find():
-            log.debug('  %r' % line)
-
-
-def traced(db=None, whitelist=None, blacklist=None):
-    '''a decorator enabling, disabling and updating moncov'''
-    def tracer_wrapper(function):
-        def tracer(*args, **kvs):
-            with tracing(db, whitelist, blacklist):
-                ret = function(*args, **kvs)
-            return ret
-        return tracer
-    return tracer_wrapper
 
 
 class MoncovTest(unittest.TestCase):
@@ -44,7 +18,7 @@ class MoncovTest(unittest.TestCase):
     def setUpClass(cls):
         '''get reference to the db'''
         cls.db = moncov.conf.get_db(dbname="%s_db" % cls.__name__)
-        cls.whitelist = []#[re.compile(re.escape(__file__))] # allow collecting this file only
+        cls.whitelist = get_pyfilename_whitelist(__file__) # allow collecting this file only
         cls.blacklist = []#[re.compile('-------NOMATCH-------')] # FIXME blacklist [] results in a default
         pass
 
