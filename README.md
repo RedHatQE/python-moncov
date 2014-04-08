@@ -14,6 +14,12 @@ Usage
 * moncov update
 * moncov simple | grep sample
 
+Hints
+-----
+* events_count in /etc/moncov.yaml can be adjusted to reduce record drops
+* moncov update -s forks a daemon that updates the stats each -t seconds
+
+
 Notes
 -----
 * branch rates are a work-in-progress
