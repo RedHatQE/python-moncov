@@ -19,7 +19,7 @@ class MoncovTest(unittest.TestCase):
         '''get reference to the db'''
         cls.db = moncov.conf.get_db(dbname="%s_db" % cls.__name__)
         cls.whitelist = get_pyfilename_whitelist(__file__) # allow collecting this file only
-        cls.blacklist = []#[re.compile('-------NOMATCH-------')] # FIXME blacklist [] results in a default
+        cls.blacklist = []
         pass
 
     @classmethod
