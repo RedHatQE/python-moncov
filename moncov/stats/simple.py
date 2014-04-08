@@ -184,8 +184,12 @@ def get_stats(db=None, whitelist=None, blacklist=None):
             branch_rate = float(visitor.branch_rate[0])/visitor.branch_rate[1]
         else:
             branch_rate = 0
+        if len(visitor.top.lines) - 1 <= 0:
+            line_rate = 0
+        else:
+            line_rate = float(len(doc['lines']))/(len(visitor.top.lines)-1)
 
-        stats.append(FileStatus(filename=filename, line_rate=float(len(doc['lines']))/(len(visitor.top.lines)-1), branch_rate=branch_rate))
+        stats.append(FileStatus(filename=filename, line_rate=line_rate, branch_rate=branch_rate))
 
     return stats
 
