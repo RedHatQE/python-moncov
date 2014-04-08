@@ -15,10 +15,10 @@ class Collector(object):
     # the top, and resumed when they become the top again.
 
     def __init__(self, db=None, dbhost=None, dbport=None, dbname=None,
-                whitelist=[], blacklist=[]):
+                whitelist=None, blacklist=None):
         self.tracers = []
         self._trace_class = PyTracer
-        from conf import (DBHOST, DBPORT, DBNAME, BLACKLIST, WHITELIST)
+        from conf import (get_whitelist, get_blacklist, DBHOST, DBPORT, DBNAME)
         if db is None:
             self.dbhost = dbhost or DBHOST
             self.dbport = dbport or DBPORT
@@ -27,8 +27,8 @@ class Collector(object):
             self.dbhost = db.connection.host
             self.dbport = db.connection.port
             self.dbname = db.name
-        self.blacklist = [re.compile(regexp) for regexp in blacklist] or BLACKLIST
-        self.whitelist = [re.compile(regexp) for regexp in whitelist] or WHITELIST
+        self.blacklist = get_blacklist(blacklist)
+        self.whitelist = get_whitelist(whitelist)
         log.info('using: %r, %r, %r, %r, %r' % (self.dbhost, self.dbport, self.dbname,
                     [x.pattern for x in self.whitelist], [x.pattern for x in self.blacklist]))
 
