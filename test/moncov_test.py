@@ -127,7 +127,7 @@ class MoncovTest(unittest.TestCase):
         tmp(True)
         self.assertResultBranchRate(Fraction(1,2))
 
-    def _test_09_100percent_branch_rate_multiline_test(self):
+    def test_09_100percent_branch_rate_multiline_test(self):
         @traced(self.db, self.whitelist, self.blacklist)
         def tmp(value):
             if False or \

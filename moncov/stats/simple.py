@@ -63,9 +63,8 @@ class Visitor(ast.NodeVisitor):
 
 
         if node.test.lineno in self.hit_count:
-
-            hits = set([self.hit_count[line] for line in
-            current.lines-set([node.test.lineno]) if line in self.hit_count])
+            test_lines = set([subnode.lineno for subnode in ast.walk(node.test) if hasattr(subnode, 'lineno')])
+            hits = set([self.hit_count[line] for line in current.lines - test_lines if line in self.hit_count])
             if hits and (self.hit_count[node.test.lineno] > max(hits)):
                 self.branch_rate = [self.branch_rate[0]+2, self.branch_rate[1]+2]
 
@@ -87,8 +86,10 @@ class Visitor(ast.NodeVisitor):
         current = self.stack.pop()
         if node.iter.lineno in self.hit_count:
             # this For node was executed indeed
-            hits = set([self.hit_count[line] for line in current.lines -
-                        set([node.iter.lineno]) if line in self.hit_count])
+            iter_lines = set([subnode.lineno for subnode in ast.walk(node.iter) if hasattr(subnode, 'lineno')])
+            target_lines = set([subnode.lineno for subnode in ast.walk(node.target) if hasattr(subnode, 'lineno')])
+            hits = set([self.hit_count[line] for line in current.lines - (iter_lines | target_lines)
+                        if line in self.hit_count])
             if hits and self.hit_count[node.iter.lineno] > max(hits) + 1:
                 # the For node test part was visited more times than the body
                 # the +1 term is necessary as even with empty iterator there
@@ -110,8 +111,8 @@ class Visitor(ast.NodeVisitor):
             self.visit(sub_node)
         current = self.stack.pop()
         if node.test.lineno in self.hit_count:
-            hits = set([self.hit_count[line] for line in current.lines -
-                        set([node.test.lineno]) if line in self.hit_count])
+            test_lines = set([subnode.lineno for subnode in ast.walk(node.test) if hasattr(subnode, 'lineno')])
+            hits = set([self.hit_count[line] for line in current.lines - test_lines if line in self.hit_count])
             if hits and (self.hit_count[node.test.lineno] > max(hits) + 1):
                 # the +1 term is necessary to get 2/2 when
                 # while False; while "Some" both have been encountered
