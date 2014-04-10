@@ -1,144 +1,112 @@
-# prevent tracing ourselves
-import moncov
 import ast
+import moncov
 import sys
+import lxml
 import fractions
-from fractions import Fraction
 import collections
+from fractions import Fraction
 
+class Rate(Fraction):
 
-class Status(object):
-    def __init__(self, lineno=0, lines=set(), hits=set(), branch_rate=None):
-        self.lineno = lineno
-        self.lines = lines
-        self.branch_rate = branch_rate or [0, 0]
-        self.hits = hits
+    def __new__(cls, numerator=0, denominator=None):
+        '''avoid reduction'''
+        self = super(Rate, cls).__new__(cls, numerator, denominator)
+        if denominator is None:
+            return self
+        gcd = fractions.gcd(numerator, denominator)
+        self._numerator *= gcd
+        self._denominator *= gcd
+        return self
 
-    @property
-    def lines(self):
-        return self._lines
-
-    @lines.setter
-    def lines(self, other_set):
-        # ensure self.lineno is kept in the set
-        self._lines = other_set | set([self.lineno])
-
-    def merge(self, other):
-        # merge statuses <<=
-        assert type(self) is type(other)
-        self.lines |= other.lines
-        self.hits |= other.hits
-        self.branch_rate = [self.branch_rate[0] + other.branch_rate[0], self.branch_rate[1] + other.branch_rate[1]]
-
+    def __or__(self, other):
+        '''grow the portion and the pie size'''
+        return type(self)(self.numerator + other.numerator,
+                        self.denominator + other.denominator)
 
     def __repr__(self):
-        return '%r(%r, lines=%r, hits=%r, branch_rate=%r)' % (
-                type(self), self.lineno, self.lines, self.hits, self.branch_rate)
-
-class Visitor(ast.NodeVisitor):
-
-    def __init__(self, hit_count={}, branch_rate=None):
-        # hit_count is a mapping: lineno->line_hits
-        self.hit_count = hit_count
-        # set of lines explored during parsing
-        self.lines = set()
-        # all hit/executed lines
-        self.hits = set(self.hit_count.keys())
-        self.branch_rate = branch_rate or [0,0]
-        self.stack = [Status(lineno=0, hits=self.hits, branch_rate=self.branch_rate)]
-        super(Visitor, self).__init__()
-
-    def visit_If(self, node):
-        # need to distinguish between test/body/orelse if statement subtrees
-        # the default branch rate of an if/test statement is 1/2
-        self.stack.append(Status(node.lineno, lines=self.lines,
-            hits=self.hits, branch_rate=self.branch_rate))
-
-        self.visit(node.test)
-        for sub_node in node.body:
-            self.visit(sub_node)
-        for sub_node in node.orelse:
-            self.visit(sub_node)
-        current = self.stack.pop()
-
-
-        if node.test.lineno in self.hit_count:
-            test_lines = set([subnode.lineno for subnode in ast.walk(node.test) if hasattr(subnode, 'lineno')])
-            hits = set([self.hit_count[line] for line in current.lines - test_lines if line in self.hit_count])
-            if hits and (self.hit_count[node.test.lineno] > max(hits)):
-                self.branch_rate = [self.branch_rate[0]+2, self.branch_rate[1]+2]
-
-            else:
-                self.branch_rate = [self.branch_rate[0]+1, self.branch_rate[1]+2]
-
-        current.branch_rate = self.branch_rate
-        self.top.merge(current)
-
-    def visit_For(self, node):
-        self.stack.append(Status(node.lineno, lines=self.lines,
-                hits=self.hits, branch_rate=self.branch_rate))
-        self.visit(node.target)
-        self.visit(node.iter)
-        for sub_node in node.body:
-            self.visit(sub_node)
-        for sub_node in node.orelse:
-            self.visit(sub_node)
-        current = self.stack.pop()
-        if node.iter.lineno in self.hit_count:
-            # this For node was executed indeed
-            iter_lines = set([subnode.lineno for subnode in ast.walk(node.iter) if hasattr(subnode, 'lineno')])
-            target_lines = set([subnode.lineno for subnode in ast.walk(node.target) if hasattr(subnode, 'lineno')])
-            hits = set([self.hit_count[line] for line in current.lines - (iter_lines | target_lines)
-                        if line in self.hit_count])
-            if hits and self.hit_count[node.iter.lineno] > max(hits) + 1:
-                # the For node test part was visited more times than the body
-                # the +1 term is necessary as even with empty iterator there
-                # are always 2 hits when the iterator is being wisited and rises
-                # StopIteration
-                self.branch_rate = [self.branch_rate[0]+2, self.branch_rate[1]+2]
-            else:
-                self.branch_rate = [self.branch_rate[0]+1, self.branch_rate[1]+2]
-        current.branch_rate = self.branch_rate
-        self.top.merge(current)
-
-    def visit_While(self, node):
-        self.stack.append(Status(node.lineno, lines=self.lines,
-            hits=self.hits, branch_rate=self.branch_rate))
-        self.visit(node.test)
-        for sub_node in node.body:
-            self.visit(sub_node)
-        for sub_node in node.orelse:
-            self.visit(sub_node)
-        current = self.stack.pop()
-        if node.test.lineno in self.hit_count:
-            test_lines = set([subnode.lineno for subnode in ast.walk(node.test) if hasattr(subnode, 'lineno')])
-            hits = set([self.hit_count[line] for line in current.lines - test_lines if line in self.hit_count])
-            if hits and (self.hit_count[node.test.lineno] > max(hits) + 1):
-                # the +1 term is necessary to get 2/2 when
-                # while False; while "Some" both have been encountered
-                self.branch_rate = [self.branch_rate[0]+2, self.branch_rate[1]+2]
-
-            else:
-                self.branch_rate = [self.branch_rate[0]+1, self.branch_rate[1]+2]
-
-        current.branch_rate = self.branch_rate
-        self.top.merge(current)
-
-    def generic_visit(self, node):
-        # update top status node
-        if hasattr(node, 'lineno'):
-            # a line-node
-            self.top.lines.add(node.lineno)
-
-        super(Visitor, self).generic_visit(node)
+        return '%s(%r, %r)' % (type(self).__name__, self.numerator, self.denominator)
 
     @property
-    def top(self):
-        return self.stack[-1]
+    def fraction(self):
+        '''return a fraction created out of a rate instance'''
+        return Fraction(self.numerator, self.denominator)
 
-    @top.setter
-    def top(self, value):
-        self.stack[-1] = value
+class Visitor(ast.NodeVisitor):
+    def __init__(self, hit_count={}):
+        self.hit_count = hit_count
+        self.lines = set()
+        self.line_rate = None
+        self.branch_rate = None
+
+    def add_line(self, node):
+        '''ad node and update self.line_rate'''
+        if not hasattr(node, 'lineno') or node.lineno in self.lines:
+            # already encountered --- skip
+            return
+        self.lines.add(node.lineno)
+        if node.lineno in self.hit_count:
+            # this line was executed
+            rate = Rate(1, 1)
+        else:
+            rate = Rate(0, 1)
+        if self.line_rate is None:
+            # initial state
+            self.line_rate = rate
+        else:
+            self.line_rate |= rate
+
+    def add_branch(self, node):
+        '''add a branched node and update self.branch_rate'''
+        orelse_hits = set([subnode.lineno for subnode in node.orelse if
+                            hasattr(subnode, 'lineno') and subnode.lineno in self.hit_count])
+        body_hits = set([subnode.lineno for subnode in node.body if
+                            hasattr(subnode, 'lineno') and subnode.lineno in self.hit_count])
+        if node.orelse:
+            # node has both orelse and body branch
+            print orelse_hits, body_hits
+            if orelse_hits and body_hits:
+                # 2 branches and 2 hits
+                rate = Rate(2, 2)
+            else:
+                # either orelse or body without hits
+                rate = Rate(1, 2)
+        else:
+            # just body branch
+            if body_hits:
+                # body was executed
+                rate = Rate(1, 1)
+            else:
+                rate = Rate(0, 1)
+        if self.branch_rate is None:
+            # initial state
+            self.branch_rate = rate
+        else:
+            self.branch_rate |= rate
+
+
+    def visit_If(self, node):
+        '''visit all If-sub nodes and update branch rate'''
+        self.visit(node.test)
+        for subnode in node.body + node.orelse:
+            self.visit(subnode)
+        self.add_branch(node)
+
+    def visit_While(self, node):
+        self.visit(node.test)
+        for subnode in node.body + node.orelse:
+            self.visit(subnode)
+        self.add_branch(node)
+
+    def visit_For(self, node):
+        self.visit(node.target)
+        self.visit(node.iter)
+        for subnode in node.body + node.orelse:
+            self.visit(subnode)
+        self.add_branch(node)
+
+    def generic_visit(self, node):
+        self.add_line(node)
+        super(Visitor, self).generic_visit(node)
 
 
 FileStatus = collections.namedtuple('FileStatus', ['filename',
@@ -180,16 +148,8 @@ def get_stats(db=None, whitelist=None, blacklist=None):
             int(pair['value'])) for pair in doc['lines']]))
         visitor.visit(tree)
 
-        if visitor.branch_rate[1] != 0:
-            branch_rate = float(visitor.branch_rate[0])/visitor.branch_rate[1]
-        else:
-            branch_rate = 0
-        if len(visitor.top.lines) - 1 <= 0:
-            line_rate = 0
-        else:
-            line_rate = float(len(doc['lines']))/(len(visitor.top.lines)-1)
-
-        stats.append(FileStatus(filename=filename, line_rate=line_rate, branch_rate=branch_rate))
+        stats.append(FileStatus(filename=filename, line_rate=visitor.line_rate,
+                branch_rate=visitor.branch_rate))
 
     return stats
 
@@ -198,8 +158,15 @@ def print_stats(db=None, whitelist=None, blacklist=None):
     print "# filename, linerate, branchrate"
     for file_status in stats:
         if isinstance(file_status, FileStatus):
-            print "%s: %1.2f, %1.2f" % (file_status.filename, file_status.line_rate,
-                    file_status.branch_rate)
+            if file_status.branch_rate is not None:
+                branch_rate = '%1.2f' % file_status.branch_rate
+            else:
+                branch_rate = 'N/A'
+            if file_status.line_rate is not None:
+                line_rate = '%1.2f' % file_status.line_rate
+            else:
+                line_rate = 'N/A'
+            print  file_status.filename + ', ' + line_rate + ', ' + branch_rate
         elif isinstance(file_status, FileErrorStatus):
             print "# %s: %r" % (file_status.filename, file_status.error)
         else:
