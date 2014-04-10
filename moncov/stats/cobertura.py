@@ -597,14 +597,13 @@ def generate_xml(dbhost = "localhost", dbport = 27017, dbname = 'moncov', output
     f.write(etree.tostring(xml_tree, pretty_print=True, xml_declaration=True, doctype="<!--DOCTYPE coverage SYSTEM 'http://cobertura.sourceforge.net/xml/coverage-04.dtd'-->"))
     f.close()
 
-start_time = time.time()
 if __name__ == "__main__":
+    start_time = time.time()
     generate_xml()
+    finish_time = time.time()
 
-finish_time = time.time()
-
-run_time = finish_time - start_time
-print run_time
+    run_time = finish_time - start_time
+    print run_time
 
 
 #tree = ast.parse(src)
