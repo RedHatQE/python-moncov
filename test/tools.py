@@ -4,6 +4,7 @@ import re
 import os
 import contextlib
 import moncov
+import unittest
 log = logging.getLogger(__name__)
 
 @contextlib.contextmanager
@@ -35,13 +36,51 @@ def traced(db=None, whitelist=None, blacklist=None):
 
 def get_pyfilename_whitelist(filename):
     '''return a re.compiled pattern that matches any *.py(c)? of the filename present'''
-    escaped = re.escape(filename)
-    extsplit = escaped.split(os.path.extsep)
+    extsplit = filename.split(os.path.extsep)
     if len(extsplit) > 1:
         # filename has extension
         if extsplit[-1].startswith('py'):
             extsplit[-1] = 'pyc?'
-    escaped = os.path.extsep.join(extsplit)
-    return [re.compile(escaped)]
+    filename = os.path.extsep.join(extsplit)
+    return [re.compile(filename)]
+
+def code_submodule_whitelist(modulename):
+    '''return code submodule whitelist'''
+    import imp
+    _, filename, _ = imp.find_module(modulename, ['./test/code', './code', './'])
+    return get_pyfilename_whitelist('.*' + filename)
+
+
+class GenericMoncovTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        '''get reference to the db'''
+        cls.db = moncov.conf.get_db(dbname="%s_db" % cls.__name__)
+
+    @classmethod
+    def tearDownClass(cls):
+        '''close the db session'''
+        moncov.ctl.disable()
+        moncov.ctl.drop(db=cls.db)
+        cls.db.connection.close()
+        pass
+
+    def setUp(self):
+        '''prepare clean db'''
+        moncov.ctl.drop(db=self.db)
+        moncov.ctl.init(db=self.db)
+        pass
+
+    def tearDown(self):
+        '''clean-up db'''
+        moncov.ctl.drop(db=self.db)
+        pass
+
+    def assertResultBranchRate(self, rate):
+        '''assert single result branch rate'''
+        result = moncov.stats.simple.get_stats(db=self.db, whitelist=[re.compile('.*')], blacklist=[])
+        assert len(result) == 1, "just a single file measured: %r" % result
+        status = result[0]
+        self.assertEqual(status.branch_rate, rate)
 
 
