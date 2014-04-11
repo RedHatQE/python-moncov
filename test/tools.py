@@ -5,6 +5,7 @@ import os
 import contextlib
 import moncov
 import unittest
+import imp
 log = logging.getLogger(__name__)
 
 @contextlib.contextmanager
@@ -44,12 +45,23 @@ def get_pyfilename_whitelist(filename):
     filename = os.path.extsep.join(extsplit)
     return [re.compile(filename)]
 
+def get_code_submodule_tuple(modulename):
+    return imp.find_module(modulename, ['./test/code', './code', './'])
+
 def code_submodule_whitelist(modulename):
     '''return code submodule whitelist'''
-    import imp
-    _, filename, _ = imp.find_module(modulename, ['./test/code', './code', './'])
+    _, filename, _ = get_code_submodule_tuple(modulename)
     return get_pyfilename_whitelist('.*' + filename)
 
+@contextlib.contextmanager
+def tracing_import_code_submodule(modulename, db=None):
+    '''context for tracing import'''
+    whitelist = code_submodule_whitelist(modulename)
+    with tracing(db=db, whitelist=whitelist, blacklist=[]):
+        try:
+            yield imp.load_module(modulename, *get_code_submodule_tuple(modulename))
+        finally:
+            pass
 
 class GenericMoncovTest(unittest.TestCase):
     @classmethod

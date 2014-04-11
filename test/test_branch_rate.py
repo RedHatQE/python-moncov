@@ -1,6 +1,7 @@
 from tools import GenericMoncovTest
 from tools import tracing
 from tools import code_submodule_whitelist as whitelist
+from tools import tracing_import_code_submodule as tracing_import
 from moncov.stats.rate import Rate
 
 class Test(GenericMoncovTest):
@@ -28,4 +29,18 @@ class Test(GenericMoncovTest):
         with tracing(self.db, whitelist('if_true_if_true'), []):
             import code.if_true_if_true
         self.assertResultBranchRate(Rate(2, 2))
-        
+
+    def test_06_true_fucntion_value_if_value_else(self):
+        with tracing_import('function_value_if_value_else', db=self.db) as module: 
+            module.function(True)
+        self.assertResultBranchRate(Rate(1, 2))
+
+    def test_06_false_fucntion_value_if_value_else(self):
+        with tracing_import('function_value_if_value_else', db=self.db) as module: 
+            module.function(False)
+        self.assertResultBranchRate(Rate(1, 2))
+
+    def test_07_true_false__function_value_if_value_else(self):
+        with tracing_import('function_value_if_value_else', db=self.db) as module: 
+            module.function(True); module.function(False)
+        self.assertResultBranchRate(Rate(2, 2))
