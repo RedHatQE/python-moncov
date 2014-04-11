@@ -35,6 +35,7 @@ class Visitor(ast.NodeVisitor):
                             hasattr(subnode, 'lineno') and subnode.lineno in self.hit_count])
         if node.orelse:
             # node has both orelse and body branch
+
             if orelse_hits and body_hits:
                 # 2 branches and 2 hits
                 rate = Rate(2, 2)
