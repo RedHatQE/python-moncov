@@ -300,7 +300,18 @@ class Status(object):
                         try:
                             self.xml_status = xml[-1][-1][-1][-1][-1]
                             self.xml_status.append(E.line(E.conditions(E.condition(number="0", type="jump", coverage="100%")), hits = hits_, number=str(lineno), branch='true'))
-                            xml[-1][-1][-1][-1][-1][-1].set("condition-coverage", 'test')
+                            
+                            
+                            if self.branch_rate.numerator == self.branch_rate.denominator:                                
+                                branch_rate = "100% (2/2)"
+                                xml[-1][-1][-1][-1][-1][-1][-1][-1].set('coverage', "100%")
+                            else:
+                                if self.branch_rate.denominator !=0 :
+                                    branch_rate = str(self.branch_rate.numerator*100/self.branch_rate.denominator) + "% (" + str(self.branch_rate) + ")" 
+                                    xml[-1][-1][-1][-1][-1][-1][-1][-1].set('coverage', str(self.branch_rate.numerator*100/self.branch_rate.denominator)+"%")
+                                  
+                            xml[-1][-1][-1][-1][-1][-1].set("condition-coverage", branch_rate)
+
                         except:
                             pass
                             
