@@ -1,5 +1,5 @@
 Name:		python-moncov
-Version:	0.5.6
+Version:	0.5.7
 Release:	1%{?dist}
 Summary:	Python code coverage using MongoDB
 
@@ -58,6 +58,54 @@ fi
 %{_bindir}/moncov
 
 %changelog
+* Mon Apr 14 2014 dparalen <vetrisko@gmail.com> 0.5.7-1
+- fix accidently del lines (igulina@redhat.com)
+- add while and for in xml (igulina@redhat.com)
+- add while and for in parser (igulina@redhat.com)
+- deleted print (igulina@redhat.com)
+- fix xml for class lines (igulina@redhat.com)
+- introducing few more branch rate test cases (vetrisko@gmail.com)
+- introducing function call tests (vetrisko@gmail.com)
+- introducing branch rate tests (vetrisko@gmail.com)
+- fix pyfilename whitelist and introduce a generic moncov test class
+  (vetrisko@gmail.com)
+- housekeeping---moving Rate to a custom module (vetrisko@gmail.com)
+- cleanup (vetrisko@gmail.com)
+- fix: debug print (vetrisko@gmail.com)
+- fix: remove debug print (vetrisko@gmail.com)
+- a facepalm-moment fix (vetrisko@gmail.com)
+- fix xml generation (igulina@redhat.com)
+- Update README.md (vetrisko@gmail.com)
+- introducing default events_count value (vetrisko@gmail.com)
+- fix: division by zero in case no branches excercised (vetrisko@gmail.com)
+- fix: avoid counting test, iter and target fields lines (vetrisko@gmail.com)
+- fix black/white-list propagation (vetrisko@gmail.com)
+- fix black/white-list propagation (vetrisko@gmail.com)
+- introducing test tools.py module (vetrisko@gmail.com)
+- moving tools to tools.py module (vetrisko@gmail.com)
+- introducing For and While branch rates (vetrisko@gmail.com)
+- introducing and fixing test cases (vetrisko@gmail.com)
+- treat hits as set (vetrisko@gmail.com)
+- enhanced debugging messages (vetrisko@gmail.com)
+- fix branch-rate calculation (igulina@redhat.com)
+- fix branch-rate calculation (igulina@redhat.com)
+- fix issue#1 issue#3 (vetrisko@gmail.com)
+- fixing line-rate calculation (igulina@redhat.com)
+- Test cases for line-rate (igulina@redhat.com)
+- Test cases for branch-rate (igulina@redhat.com)
+- split stats gathering and printing (vetrisko@gmail.com)
+- avoid stack dumps on None (vetrisko@gmail.com)
+- fix recursion entry point (vetrisko@gmail.com)
+- trying with setup.py install (vetrisko@gmail.com)
+- fix missing lxml dependency (vetrisko@gmail.com)
+- make pip run in sudo (vetrisko@gmail.com)
+- introducing travis config (vetrisko@gmail.com)
+- Automatic commit of package [python-moncov] release [0.5.6-1].
+  (mkovacik@localhost.localdomain)
+- introducing branch rates (vetrisko@gmail.com)
+- ctl init returns used db object (vetrisko@gmail.com)
+- fix wrong default attr values (vetrisko@gmail.com)
+
 * Sat Mar 15 2014 Unknown name 0.5.6-1
 - Update README.md (vetrisko@gmail.com)
 - fix: adopting the key shape change (vetrisko@gmail.com)
