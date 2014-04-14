@@ -39,9 +39,12 @@ class Visitor(ast.NodeVisitor):
             if orelse_hits and body_hits:
                 # 2 branches and 2 hits
                 rate = Rate(2, 2)
-            else:
+            elif orelse_hits or body_hits:
                 # either orelse or body without hits
                 rate = Rate(1, 2)
+            else:
+                # no hits at all
+                rate = Rate(0, 2)
         else:
             # just body branch
             if body_hits:
