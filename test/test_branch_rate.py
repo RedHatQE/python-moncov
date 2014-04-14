@@ -74,3 +74,23 @@ class Test(GenericMoncovTest):
         with tracing_import('function_a_b_if_a_if_b_else', db=self.db) as module:
             module.function(True, True); module.function(True, False)
         self.assertResultBranchRate(Rate(3, 3))
+        
+    def test_14_for_in_for(self):
+        with tracing_import('for_in_for', db=self.db) as module:
+            pass
+        self.assertResultBranchRate(Rate(2, 2))
+        
+    def test_15_while_false_if_true_else(self):
+        with tracing_import('while_false_if_true_else', db=self.db) as module:
+            pass
+        self.assertResultBranchRate(Rate(0, 3))
+        
+    def test_16_if_false_while_some(self):
+        with tracing_import('if_false_while_some', db=self.db) as module:
+            pass
+        self.assertResultBranchRate(Rate(0, 2))
+        
+    def test_17_while_false_for_some(self):
+        with tracing_import('while_false_for_some', db=self.db) as module:
+            pass
+        self.assertResultBranchRate(Rate(0, 3))
