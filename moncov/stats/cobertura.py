@@ -9,7 +9,7 @@ import time
 #to generate xml
 from lxml import etree
 from lxml.builder import E
-from lxml.builder import ElementMaker 
+from lxml.builder import ElementMaker
 
 # *_[EX] events: Enter eXit
 M_E = 'M_E' # Module
@@ -80,13 +80,13 @@ TBL = {
         (O_E, O_E): PUSH([O_E, O_E]), # entering other (nested) statemetn
         (O_E, IFT): PUSH([IFT, O_E]), # entering other statement within if.test
         (O_E, IFB): PUSH([IFB, O_E]), # entering other statement within if.body
-        
+
         (O_E, FOT): PUSH([FOT, O_E]), # entering other statement within for.test
         (O_E, FOB): PUSH([FOB, O_E]), # entering other statement within for.body
-        
+
         (O_E, WHT): PUSH([WHT, O_E]), # entering other statement within while.test
         (O_E, WHB): PUSH([WHB, O_E]), # entering other statement within while.body
-        
+
         (O_E, IFO): PUSH([IFO, O_E]), # entering other statement within if.orelse
         (O_X, O_E): NOOP(),           # leaving other (nested) statement
         (O_X, FTT): PUSH([FTT]),
@@ -100,21 +100,21 @@ TBL = {
         (IFT, F_E): PUSH([F_E, IFT]), # entering if statement within a nested function line
         (IFT, O_E): PUSH([O_E, IFT]), # entering if statement within a (sub-)statement line
         (IFT, IFB): PUSH([IFB, IFT]), # entering nested if statement from within if.body
-        
+
         (IFT, FOB): PUSH([FOB, IFT]), # entering nested if statement from within for.body
         (IFT, WHB): PUSH([WHB, IFT]), # entering nested if statement from within while.body
-        
+
         (IFT, IFO): PUSH([IFO, IFT]), # entering nested if statement from within if.orelse
         (IFB, IFT): PUSH([IFB]),      # entering if.body
         (IFO, IFB): PUSH([IFO]),      # entering if.orelse
         (IFX, IFB): NOOP(),           # leaving if statement from within if.body (no orelse present)
         (IFX, IFO): NOOP(),           # leaving if statement from within of.orelse # mistake?
-        (IFX, FOB): NOOP(),           # leaving if statement from within for.body 
+        (IFX, FOB): NOOP(),           # leaving if statement from within for.body
         (IFX, WHB): NOOP(),           # leaving if statement from within while.body
         (IFX, IFO): NOOP(),           # leaving if statement from within if.orelse
-        
-        
-        
+
+
+
         (FOT, BTT): PUSH([BTT, FOT]), # entering for statement within a module line
         (FOT, FTT): PUSH([FTT, FOT]), # entering for statement within a regular method line
         (FOT, CTT): PUSH([CTT, FOT]), # entering for statement within a regular class line
@@ -126,12 +126,12 @@ TBL = {
         (FOT, WHB): PUSH([WHB, FOT]), # entering nested for statement from within while.body
         (FOT, IFO): PUSH([IFO, FOT]), # entering nested for statement from within if.orelse
         (FOB, FOT): PUSH([FOB]),      # entering for.body
-        (FOX, FOB): NOOP(),           # leaving for statement from within for.body 
-        (FOX, IFB): NOOP(),           # leaving for statement from within if.body 
-        (FOX, IFO): NOOP(),           # leaving for statement from within if.orelse 
-        (FOX, WHB): NOOP(),           # leaving for statement from within while.body 
-        
-        
+        (FOX, FOB): NOOP(),           # leaving for statement from within for.body
+        (FOX, IFB): NOOP(),           # leaving for statement from within if.body
+        (FOX, IFO): NOOP(),           # leaving for statement from within if.orelse
+        (FOX, WHB): NOOP(),           # leaving for statement from within while.body
+
+
         (WHT, BTT): PUSH([BTT, WHT]), # entering while statement within a module line
         (WHT, FTT): PUSH([FTT, WHT]), # entering while statement within a regular method line
         (WHT, CTT): PUSH([CTT, WHT]), # entering while statement within a regular class line
@@ -144,11 +144,11 @@ TBL = {
         (WHT, IFO): PUSH([IFO, WHT]), # entering nested while statement from within if.orelse
         (WHB, FOT): PUSH([FOB]),      # entering while.body
         (WHB, WHT): PUSH([WHB]),      # entering while.body from within while.test
-        (WHX, FOB): NOOP(),           # leaving while statement from within for.body 
-        (WHX, IFB): NOOP(),           # leaving while statement from within if.body 
-        (WHX, IFO): NOOP(),           # leaving while statement from within if.orelse 
-        (WHX, WHB): NOOP(),           # leaving while statement from within while.body 
-        (WHX, WHT): NOOP(),           # leaving while statement from within while.body 
+        (WHX, FOB): NOOP(),           # leaving while statement from within for.body
+        (WHX, IFB): NOOP(),           # leaving while statement from within if.body
+        (WHX, IFO): NOOP(),           # leaving while statement from within if.orelse
+        (WHX, WHB): NOOP(),           # leaving while statement from within while.body
+        (WHX, WHT): NOOP(),           # leaving while statement from within while.body
 
 
 }
@@ -268,7 +268,7 @@ class Status(object):
     linetype = None
     place = None
 
-    def __init__(self, lineno=0, lines=set(), 
+    def __init__(self, lineno=0, lines=set(),
             branch_rate=Rate(0), linetype=ModuleLine, hit_count = None, place = None, class_data = None):
         self.linetype = linetype
         self.lineno = lineno
@@ -277,7 +277,7 @@ class Status(object):
         self.hit_count = hit_count or None
         self.place = place or [0,0]
         self.class_data = class_data or [0,0, 0, 0, 0, 0]
-                
+
         # class_data[0] = counter for methods hits
         # class_data[1] = counter for methods lines
         # class_data[2] = counter for class hits
@@ -299,10 +299,10 @@ class Status(object):
         # merge statuses <<=
         # assert type(self) is type(other)
         self.lines |= other.lines
-        self.branch_rate &= other.branch_rate  
-        self.place = other.place      
+        self.branch_rate &= other.branch_rate
+        self.place = other.place
         self.class_data = other.class_data
-     
+
 
 
     @property
@@ -313,36 +313,36 @@ class Status(object):
         '''add another line and update line rate'''
 
         line = self.linetype(lineno)
- 
+
         if line not in self.lines:
-            
+
             if lineno in self.hit_count.keys():
                 self.class_data[4] += 1
                 hits_ = str(int(self.hit_count[lineno]))
             else:
                 hits_ = '0'
-                
+
             self.class_data[5] += 1
-            
-            if self.linetype == ClassLine:         
+
+            if self.linetype == ClassLine:
                 try:
                     self.xml_status = xml[-1][-1][-1][-1][-1]
                     self.xml_status.append(E(tag='line', hits = hits_, number=str(lineno), branch='false'))
                 except:
                     pass
-                    
+
                 if lineno in self.hit_count.keys():
                     self.class_data[2] += 1
                 self.class_data[3] +=1
 
-      
-            if self.linetype == MethodLine:            
+
+            if self.linetype == MethodLine:
                 try:
                     self.xml_status = xml[-1][-1][-1][-1][0][-1][-1]
-                    self.xml_status.append(E(tag='line', hits = hits_, number=str(lineno), branch='false'))                 
+                    self.xml_status.append(E(tag='line', hits = hits_, number=str(lineno), branch='false'))
                 except:
                     pass
-                
+
                 if lineno in self.hit_count.keys():
                     self.class_data[0] += 1
                     self.class_data[2] += 1
@@ -350,66 +350,66 @@ class Status(object):
                 self.class_data[1] += 1
                 self.class_data[3] += 1
 
-                
-            if self.linetype == IfLine or self.linetype == WhileLine or self.linetype == ForLine:        
+
+            if self.linetype == IfLine or self.linetype == WhileLine or self.linetype == ForLine:
 
                 if self.place[0] == 'class':
 
                     if lineno in self.hit_count.keys():
                         self.class_data[2] += 1
                     self.class_data[3] += 1
-                    
-                    if self.place[1] == 1:                  
-                        
+
+                    if self.place[1] == 1:
+
                         try:
                             self.xml_status = xml[-1][-1][-1][-1][-1]
                             self.xml_status.append(E.line(E.conditions(E.condition(number="0", type="jump", coverage="100%")), hits = hits_, number=str(lineno), branch='true'))
-                            
-                            
-                            if self.branch_rate.numerator == self.branch_rate.denominator:                                
+
+
+                            if self.branch_rate.numerator == self.branch_rate.denominator:
                                 branch_rate = "100% (2/2)"
                                 xml[-1][-1][-1][-1][-1][-1][-1][-1].set('coverage', "100%")
                             if self.branch_rate.denominator !=0 :
-                                branch_rate = str(self.branch_rate.numerator*100/self.branch_rate.denominator) + "% (" + str(self.branch_rate) + ")" 
+                                branch_rate = str(self.branch_rate.numerator*100/self.branch_rate.denominator) + "% (" + str(self.branch_rate) + ")"
                                 xml[-1][-1][-1][-1][-1][-1][-1][-1].set('coverage', str(self.branch_rate.numerator*100/self.branch_rate.denominator)+"%")
-                                  
+
                             xml[-1][-1][-1][-1][-1][-1].set("condition-coverage", branch_rate)
 
                         except:
                             pass
-                            
+
                     else:
                         try:
                             self.xml_status = xml[-1][-1][-1][-1][-1]
                             self.xml_status.append(E(tag='line', hits = hits_, number=str(lineno), branch='false'))
                         except:
                             pass
-                        
-                        
+
+
                 if self.place[0] == 'method':
-                    
+
                     if lineno in self.hit_count.keys():
                         self.class_data[0] += 1
                         self.class_data[2] += 1
 
                     self.class_data[1] += 1
                     self.class_data[3] += 1
-                    
+
                     if self.place[1] == 1:
-                        
-                    
+
+
                         try:
                             self.xml_status = xml[-1][-1][-1][-1][0][-1][-1]
                             self.xml_status.append(E.line(E.conditions(E.condition(number="0", type="jump")), hits = hits_, number=str(lineno), branch='true'))
-                            
-                            if self.branch_rate.numerator == self.branch_rate.denominator:                                
+
+                            if self.branch_rate.numerator == self.branch_rate.denominator:
                                 branch_rate = "100% (2/2)"
                                 xml[-1][-1][-1][-1][0][-1][-1][-1][-1][-1].set('coverage', "100%")
                             else:
                                 if self.branch_rate.denominator !=0 :
-                                    branch_rate = str(self.branch_rate.numerator*100/self.branch_rate.denominator) + "% (" + str(self.branch_rate) + ")" 
+                                    branch_rate = str(self.branch_rate.numerator*100/self.branch_rate.denominator) + "% (" + str(self.branch_rate) + ")"
                                     xml[-1][-1][-1][-1][0][-1][-1][-1][-1][-1].set('coverage', str(self.branch_rate.numerator*100/self.branch_rate.denominator)+"%")
-                                  
+
                             xml[-1][-1][-1][-1][0][-1][-1][-1].set("condition-coverage", branch_rate)
                         except:
                             pass
@@ -419,18 +419,18 @@ class Status(object):
                             self.xml_status.append(E(tag='line', hits = hits_, number=str(lineno), branch='false'))
                         except:
                             pass
- 
-        
+
+
         if line in self.lines:
             # already counted
             return
 
         self.lines.add(line)
-        
+
 
     def __repr__(self):
         return '%r(lineno=%r, lines=%r, branch_rate=%r, place = %r, class_data=%r)' % (
-                type(self), self.lineno, self.lines, 
+                type(self), self.lineno, self.lines,
                 self.branch_rate, self.place, self.class_data)
 
     def __str__(self):
@@ -447,8 +447,8 @@ class Visitor(ast.NodeVisitor):
             (F_E, CTT): self.init_method,
             (C_X, CTT): self.exit_nested,
             (F_X, FTT): self.exit_nested,
-            
-            
+
+
             (IFT, BTT): self.init_if,
             (IFT, CTT): self.init_if,
             (IFT, FTT): self.init_if,
@@ -461,8 +461,8 @@ class Visitor(ast.NodeVisitor):
             (IFT, WHB): self.init_if,
             (IFT, FOB): self.init_if,
 
-            
-            
+
+
             (FOT, BTT): self.init_for,
             (FOT, CTT): self.init_for,
             (FOT, FTT): self.init_for,
@@ -471,13 +471,13 @@ class Visitor(ast.NodeVisitor):
             (FOT, O_E): self.init_for,
             (FOT, IFT): self.init_for,
             (FOT, IFB): self.init_for,
-            (FOT, IFO): self.init_for,            
+            (FOT, IFO): self.init_for,
             (FOT, FOT): self.init_for,
             (FOT, FOB): self.init_for,
             (FOT, WHT): self.init_for,
             (FOT, WHB): self.init_for,
-            
-            
+
+
             (WHT, BTT): self.init_while,
             (WHT, CTT): self.init_while,
             (WHT, FTT): self.init_while,
@@ -486,28 +486,28 @@ class Visitor(ast.NodeVisitor):
             (WHT, O_E): self.init_while,
             (WHT, IFT): self.init_while,
             (WHT, IFB): self.init_while,
-            (WHT, IFO): self.init_while,            
+            (WHT, IFO): self.init_while,
             (WHT, FOT): self.init_while,
             (WHT, FOB): self.init_while,
             (WHT, WHT): self.init_while,
             (WHT, WHB): self.init_while,
-            
-            
+
+
             (IFX, IFB): self.exit_nested,
             (IFX, IFO): self.exit_nested,
             (IFX, FOB): self.exit_nested,
             (IFX, WHB): self.exit_nested,
-            
-            
-            
+
+
+
             (FOX, IFB): self.exit_nested,
             (FOX, IFO): self.exit_nested,
             (FOX, FOB): self.exit_nested,
             (FOX, WHB): self.exit_nested,
-            
+
             (WHX, IFB): self.exit_nested,
             (WHX, IFO): self.exit_nested,
-            (WHX, FOB): self.exit_nested,    
+            (WHX, FOB): self.exit_nested,
             (WHX, WHB): self.exit_nested,
 
         }
@@ -526,10 +526,10 @@ class Visitor(ast.NodeVisitor):
         self.report = None
         self.filename = filename or None
         self.place = place or [0, 0]
-        self.xml_status = xml[-1]        
+        self.xml_status = xml[-1]
 
         self.class_data = class_data or [0, 0, 0, 0, 0, 0]
-      
+
 
         super(Visitor, self).__init__()
 
@@ -557,8 +557,8 @@ class Visitor(ast.NodeVisitor):
         for sub_node in node.orelse:
             self.visit(sub_node)
         self.pda(IFX)
-        
-        
+
+
     def visit_For(self, node):
         self.node = node
         self.pda(FOT)
@@ -570,7 +570,7 @@ class Visitor(ast.NodeVisitor):
             self.visit(subnode)
         #self.add_branch(node)
         self.pda(FOX)
-        
+
     def visit_While(self, node):
         self.node = node
         self.pda(WHT)
@@ -581,7 +581,7 @@ class Visitor(ast.NodeVisitor):
             self.visit(subnode)
         #self.add_branch(node)
         self.pda(WHX)
-       
+
 
     def generic_visit(self, node, events=(O_E, O_X)):
         self.node = node
@@ -598,9 +598,9 @@ class Visitor(ast.NodeVisitor):
 
     def init_module(self, event, stack_event):
         self.place[0] = 'module'
-        self.report = Stack([Status(lineno=1, linetype=ModuleLine, hit_count = self.hit_count, place = self.place, class_data = self.class_data)])   
-        self.xml_status.append(E(tag = "package", name = self.filename))        
-        self.xml_status = xml[-1][-1]        
+        self.report = Stack([Status(lineno=1, linetype=ModuleLine, hit_count = self.hit_count, place = self.place, class_data = self.class_data)])
+        self.xml_status.append(E(tag = "package", name = self.filename))
+        self.xml_status = xml[-1][-1]
         self.xml_status.append(E(tag = "classes"))
 
     def exit_module(self, event, stack_event):
@@ -609,12 +609,12 @@ class Visitor(ast.NodeVisitor):
             module_line_rate = float(self.class_data[4])/self.class_data[5]
         else:
             module_line_rate = 0
-        xml[-1][-1].set("line-rate", str(module_line_rate)) 
+        xml[-1][-1].set("line-rate", str(module_line_rate))
         if self.report.top.branch_rate.numerator != 0:
             branch_rate = float(self.report.top.branch_rate.numerator)/self.report.top.branch_rate.denominator
         else:
-            branch_rate = 1    
-            
+            branch_rate = 1
+
         xml[-1][-1].set("branch-rate", str(branch_rate))
         xml[-1][-1].set("complexity", str("to_be_counted"))
 
@@ -639,41 +639,41 @@ class Visitor(ast.NodeVisitor):
             else:
                 class_line_rate = 0
             xml[-1][-1][-1][-1].set("line-rate", str(class_line_rate))
-            
+
             if self.report.top.branch_rate.numerator != 0:
                 branch_rate = float(self.report.top.branch_rate.numerator)/self.report.top.branch_rate.denominator
             else:
-                branch_rate = 1 
-            
+                branch_rate = 1
+
             xml[-1][-1][-1][-1].set("branch-rate", str(branch_rate))
             xml[-1][-1][-1][-1].set('complexity', 'to_be_counted')
-                 
+
             self.class_data[2] = 0
             self.class_data[3] = 0
-            
-            
-            
+
+
+
         if event == F_X:
 
             if self.class_data[1] != 0:
                 method_line_rate = float(self.class_data[0])/self.class_data[1]
             else:
                 method_line_rate = 0
-            xml[-1][-1][-1][-1][0][-1].set("line-rate", str(method_line_rate)) 
+            xml[-1][-1][-1][-1][0][-1].set("line-rate", str(method_line_rate))
             #self.class_data = [x if i not in {0,1} else 0 for i, x in enumerate(self.class_data)]
-            
+
             if self.report.top.branch_rate.numerator != 0:
                 branch_rate = float(self.report.top.branch_rate.numerator)/self.report.top.branch_rate.denominator
             else:
-                branch_rate = 1 
+                branch_rate = 1
             xml[-1][-1][-1][-1][0][-1].set("branch-rate", str(branch_rate))
-            
+
             self.class_data[0] = 0
-            self.class_data[1] = 0            
-            
+            self.class_data[1] = 0
+
 
         status = self.report.pop()
-        self.report.top.merge(status) 
+        self.report.top.merge(status)
 
 
     def init_method(self, event, stack_event):
@@ -689,8 +689,8 @@ class Visitor(ast.NodeVisitor):
     def init_if(self, event, stack_event):
         self.place[1] = 1
         self.report.push(Status(lineno=self.node.lineno, linetype=IfLine, hit_count = self.hit_count, branch_rate=Rate(1, 2), place = self.place, class_data = self.class_data))
-        
-    
+
+
     def init_for(self, event, stack_event):
         self.place[1] = 1
         self.report.push(Status(lineno=self.node.lineno, linetype=ForLine, hit_count = self.hit_count, branch_rate=Rate(1, 2), place = self.place, class_data = self.class_data))
@@ -699,7 +699,7 @@ class Visitor(ast.NodeVisitor):
         self.place[1] = 1
         self.report.push(Status(lineno=self.node.lineno, linetype=WhileLine, hit_count = self.hit_count, branch_rate=Rate(1, 2), place = self.place, class_data = self.class_data))
 
-        
+
     @property
     def status(self):
         '''return top of self.report stack'''
@@ -732,7 +732,7 @@ def generate_xml(dbhost = "localhost", dbport = 27017, dbname = 'moncov', output
                 filename = str(doc['_id'])
                 src = fd.read()
                 print "Opened file: %s" % str(doc['_id'])
-            
+
             tree = ast.parse(src)
             #print src
             # import astpp
@@ -741,17 +741,17 @@ def generate_xml(dbhost = "localhost", dbport = 27017, dbname = 'moncov', output
             #visitor.filename = f
             #print ast.dump(tree)
             visitor.visit(tree)
-        
+
             import pprint
             print pprint.pformat(visitor.status.lines), len(visitor.status.lines)
             print visitor.status
-        
+
         except IOError as e:
             print "Can't read: %s" % e.message, str(doc['_id'])
             #sys.exit(2)
 
 
-    f = open(output, 'w')    
+    f = open(output, 'w')
     f.write(etree.tostring(xml_tree, pretty_print=True, xml_declaration=True, doctype="<!--DOCTYPE coverage SYSTEM 'http://cobertura.sourceforge.net/xml/coverage-04.dtd'-->"))
     f.close()
 
