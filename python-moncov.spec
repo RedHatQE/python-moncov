@@ -1,5 +1,5 @@
 Name:		python-moncov
-Version:	0.5.7
+Version:	0.5.8
 Release:	1%{?dist}
 Summary:	Python code coverage using MongoDB
 
@@ -58,6 +58,10 @@ fi
 %{_bindir}/moncov
 
 %changelog
+* Mon Apr 14 2014 dparalen <vetrisko@gmail.com> 0.5.8-1
+- fix issue#7 (vetrisko@gmail.com)
+- add weird test cases for while false (igulina@redhat.com)
+
 * Mon Apr 14 2014 dparalen <vetrisko@gmail.com> 0.5.7-1
 - fix accidently del lines (igulina@redhat.com)
 - add while and for in xml (igulina@redhat.com)
