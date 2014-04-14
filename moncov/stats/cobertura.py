@@ -108,6 +108,7 @@ TBL = {
         (IFB, IFT): PUSH([IFB]),      # entering if.body
         (IFO, IFB): PUSH([IFO]),      # entering if.orelse
         (IFX, IFB): NOOP(),           # leaving if statement from within if.body (no orelse present)
+        (IFX, IFO): NOOP(),           # leaving if statement from within of.orelse # mistake?
         (IFX, FOB): NOOP(),           # leaving if statement from within for.body 
         (IFX, WHB): NOOP(),           # leaving if statement from within while.body
         (IFX, IFO): NOOP(),           # leaving if statement from within if.orelse
@@ -196,9 +197,7 @@ class Stack(object):
 
     @property
     def top(self):
-        #print self.data
-        if self.data != []:
-            return self.data[-1]
+        return self.data[-1]
 
     @top.setter
     def top(self, other):
@@ -706,8 +705,6 @@ class Visitor(ast.NodeVisitor):
         '''return top of self.report stack'''
         return self.report.top
 
-
-###
 
 ###
 

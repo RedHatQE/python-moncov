@@ -101,6 +101,7 @@ TBL = {
         (IFB, IFT): PUSH([IFB]),      # entering if.body
         (IFO, IFB): PUSH([IFO]),      # entering if.orelse
         (IFX, IFB): NOOP(),           # leaving if statement from within if.body (no orelse present)
+        (IFX, IFO): NOOP(),           # leaving if statement from within of.orelse
         (IFX, FOB): NOOP(),           # leaving if statement from within for.body 
         (IFX, WHB): NOOP(),           # leaving if statement from within while.body
         (IFX, IFO): NOOP(),           # leaving if statement from within if.orelse
