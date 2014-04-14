@@ -21,6 +21,8 @@ C_X = 'C_X'
 O_E = 'O_E' # Other
 O_X = 'O_X'
 IFX = 'IFX' # leaving if
+FOX = 'FOX' # leaving for
+WHX = 'WHX' # leaving while
 
 
 # 'States'
@@ -30,6 +32,10 @@ FTT = 'FTT'  # bottom of regular method/function
 IFT = 'IFT'  # if.test attribute
 IFB = 'IFB'  # if.body attribute
 IFO = 'IFO'  # if.orelse attribute
+FOT = 'FOT'  # for.test attribute
+FOB = 'FOB'  # for.body attribute
+WHT = 'WHT'  # while.test attribute
+WHB = 'WHB'  # while.body attribute
 
 # stack actions
 NOOP = lambda: lambda stack: stack
@@ -48,6 +54,8 @@ TBL = {
         (F_E, O_E): PUSH([O_E, F_E]), # function within other statement
         (F_E, IFB): PUSH([IFB, F_E]), # entering function definition within if.body
         (F_E, IFO): PUSH([IFO, F_E]), # entering function definition within if.orelse
+        (F_E, FOB): PUSH([FOB, F_E]), # entering function definition within for.body
+        (F_E, WHB): PUSH([WHB, F_E]), # entering function definition within while.body
         (F_X, FTT): NOOP(),           # leaving method
         (F_X, F_E): NOOP(),           # leaving any nested function
 
@@ -60,6 +68,8 @@ TBL = {
         (C_X, CTT): NOOP(),           # leaving regular class
         (C_X, C_E): NOOP(),           # leaving any nested function
         (C_E, IFB): PUSH([IFB, C_E]), # entering class definition within if.body
+        (C_E, FOB): PUSH([FOB, C_E]), # entering class definition within for.body
+        (C_E, WHB): PUSH([WHB, C_E]), # entering class definition within while.body
         (C_E, IFO): PUSH([IFO, C_E]), # entering class definition within if.orelse
 
         (O_E, BTT): PUSH([BTT, O_E]), # entering other module-level statement
@@ -70,6 +80,13 @@ TBL = {
         (O_E, O_E): PUSH([O_E, O_E]), # entering other (nested) statemetn
         (O_E, IFT): PUSH([IFT, O_E]), # entering other statement within if.test
         (O_E, IFB): PUSH([IFB, O_E]), # entering other statement within if.body
+        
+        (O_E, FOT): PUSH([FOT, O_E]), # entering other statement within for.test
+        (O_E, FOB): PUSH([FOB, O_E]), # entering other statement within for.body
+        
+        (O_E, WHT): PUSH([WHT, O_E]), # entering other statement within while.test
+        (O_E, WHB): PUSH([WHB, O_E]), # entering other statement within while.body
+        
         (O_E, IFO): PUSH([IFO, O_E]), # entering other statement within if.orelse
         (O_X, O_E): NOOP(),           # leaving other (nested) statement
         (O_X, FTT): PUSH([FTT]),
@@ -83,11 +100,55 @@ TBL = {
         (IFT, F_E): PUSH([F_E, IFT]), # entering if statement within a nested function line
         (IFT, O_E): PUSH([O_E, IFT]), # entering if statement within a (sub-)statement line
         (IFT, IFB): PUSH([IFB, IFT]), # entering nested if statement from within if.body
+        
+        (IFT, FOB): PUSH([FOB, IFT]), # entering nested if statement from within for.body
+        (IFT, WHB): PUSH([WHB, IFT]), # entering nested if statement from within while.body
+        
         (IFT, IFO): PUSH([IFO, IFT]), # entering nested if statement from within if.orelse
         (IFB, IFT): PUSH([IFB]),      # entering if.body
         (IFO, IFB): PUSH([IFO]),      # entering if.orelse
         (IFX, IFB): NOOP(),           # leaving if statement from within if.body (no orelse present)
-        (IFX, IFO): NOOP(),           # leaving if statement from within of.orelse
+        (IFX, FOB): NOOP(),           # leaving if statement from within for.body 
+        (IFX, WHB): NOOP(),           # leaving if statement from within while.body
+        (IFX, IFO): NOOP(),           # leaving if statement from within if.orelse
+        
+        
+        
+        (FOT, BTT): PUSH([BTT, FOT]), # entering for statement within a module line
+        (FOT, FTT): PUSH([FTT, FOT]), # entering for statement within a regular method line
+        (FOT, CTT): PUSH([CTT, FOT]), # entering for statement within a regular class line
+        (FOT, C_E): PUSH([C_E, FOT]), # entering for statement within a nested class line
+        (FOT, F_E): PUSH([F_E, FOT]), # entering for statement within a nested function line
+        (FOT, O_E): PUSH([O_E, FOT]), # entering for statement within a (sub-)statement line
+        (FOT, FOB): PUSH([FOB, FOT]), # entering nested for statement from within for.body
+        (FOT, IFB): PUSH([IFB, FOT]), # entering nested for statement from within if.body
+        (FOT, WHB): PUSH([WHB, FOT]), # entering nested for statement from within while.body
+        (FOT, IFO): PUSH([IFO, FOT]), # entering nested for statement from within if.orelse
+        (FOB, FOT): PUSH([FOB]),      # entering for.body
+        (FOX, FOB): NOOP(),           # leaving for statement from within for.body 
+        (FOX, IFB): NOOP(),           # leaving for statement from within if.body 
+        (FOX, IFO): NOOP(),           # leaving for statement from within if.orelse 
+        (FOX, WHB): NOOP(),           # leaving for statement from within while.body 
+        
+        
+        (WHT, BTT): PUSH([BTT, WHT]), # entering while statement within a module line
+        (WHT, FTT): PUSH([FTT, WHT]), # entering while statement within a regular method line
+        (WHT, CTT): PUSH([CTT, WHT]), # entering while statement within a regular class line
+        (WHT, C_E): PUSH([C_E, WHT]), # entering while statement within a nested class line
+        (WHT, F_E): PUSH([F_E, WHT]), # entering while statement within a nested function line
+        (WHT, O_E): PUSH([O_E, WHT]), # entering while statement within a (sub-)statement line
+        (WHT, FOB): PUSH([FOB, WHT]), # entering nested while statement from within for.body
+        (WHT, IFB): PUSH([IFB, WHT]), # entering nested while statement from within if.body
+        (WHT, WHB): PUSH([WHB, WHT]), # entering nested while statement from within while.body
+        (WHT, IFO): PUSH([IFO, WHT]), # entering nested while statement from within if.orelse
+        (WHB, FOT): PUSH([FOB]),      # entering while.body
+        (WHB, WHT): PUSH([WHB]),      # entering while.body from within while.test
+        (WHX, FOB): NOOP(),           # leaving while statement from within for.body 
+        (WHX, IFB): NOOP(),           # leaving while statement from within if.body 
+        (WHX, IFO): NOOP(),           # leaving while statement from within if.orelse 
+        (WHX, WHB): NOOP(),           # leaving while statement from within while.body 
+        (WHX, WHT): NOOP(),           # leaving while statement from within while.body 
+
 
 }
 
@@ -135,7 +196,9 @@ class Stack(object):
 
     @property
     def top(self):
-        return self.data[-1]
+        #print self.data
+        if self.data != []:
+            return self.data[-1]
 
     @top.setter
     def top(self, other):
@@ -192,6 +255,8 @@ class Rate(fractions.Fraction):
 
 Line = collections.namedtuple('Line', ['lineno'])
 IfLine = collections.namedtuple('IfLine', ['lineno'])
+ForLine = collections.namedtuple('ForLine', ['lineno'])
+WhileLine = collections.namedtuple('WhileLine', ['lineno'])
 MethodLine = collections.namedtuple('MethodLine', ['lineno'])
 ClassLine = collections.namedtuple('ClassLine', ['lineno'])
 ModuleLine = collections.namedtuple('ModuleLine', ['lineno'])
@@ -287,7 +352,7 @@ class Status(object):
                 self.class_data[3] += 1
 
                 
-            if self.linetype == IfLine:        
+            if self.linetype == IfLine or self.linetype == WhileLine or self.linetype == ForLine:        
 
                 if self.place[0] == 'class':
 
@@ -305,10 +370,9 @@ class Status(object):
                             if self.branch_rate.numerator == self.branch_rate.denominator:                                
                                 branch_rate = "100% (2/2)"
                                 xml[-1][-1][-1][-1][-1][-1][-1][-1].set('coverage', "100%")
-                            else:
-                                if self.branch_rate.denominator !=0 :
-                                    branch_rate = str(self.branch_rate.numerator*100/self.branch_rate.denominator) + "% (" + str(self.branch_rate) + ")" 
-                                    xml[-1][-1][-1][-1][-1][-1][-1][-1].set('coverage', str(self.branch_rate.numerator*100/self.branch_rate.denominator)+"%")
+                            if self.branch_rate.denominator !=0 :
+                                branch_rate = str(self.branch_rate.numerator*100/self.branch_rate.denominator) + "% (" + str(self.branch_rate) + ")" 
+                                xml[-1][-1][-1][-1][-1][-1][-1][-1].set('coverage', str(self.branch_rate.numerator*100/self.branch_rate.denominator)+"%")
                                   
                             xml[-1][-1][-1][-1][-1][-1].set("condition-coverage", branch_rate)
 
@@ -384,6 +448,8 @@ class Visitor(ast.NodeVisitor):
             (F_E, CTT): self.init_method,
             (C_X, CTT): self.exit_nested,
             (F_X, FTT): self.exit_nested,
+            
+            
             (IFT, BTT): self.init_if,
             (IFT, CTT): self.init_if,
             (IFT, FTT): self.init_if,
@@ -393,8 +459,57 @@ class Visitor(ast.NodeVisitor):
             (IFT, IFT): self.init_if,
             (IFT, IFB): self.init_if,
             (IFT, IFO): self.init_if,
+            (IFT, WHB): self.init_if,
+            (IFT, FOB): self.init_if,
+
+            
+            
+            (FOT, BTT): self.init_for,
+            (FOT, CTT): self.init_for,
+            (FOT, FTT): self.init_for,
+            (FOT, F_E): self.init_for,
+            (FOT, C_E): self.init_for,
+            (FOT, O_E): self.init_for,
+            (FOT, IFT): self.init_for,
+            (FOT, IFB): self.init_for,
+            (FOT, IFO): self.init_for,            
+            (FOT, FOT): self.init_for,
+            (FOT, FOB): self.init_for,
+            (FOT, WHT): self.init_for,
+            (FOT, WHB): self.init_for,
+            
+            
+            (WHT, BTT): self.init_while,
+            (WHT, CTT): self.init_while,
+            (WHT, FTT): self.init_while,
+            (WHT, F_E): self.init_while,
+            (WHT, C_E): self.init_while,
+            (WHT, O_E): self.init_while,
+            (WHT, IFT): self.init_while,
+            (WHT, IFB): self.init_while,
+            (WHT, IFO): self.init_while,            
+            (WHT, FOT): self.init_while,
+            (WHT, FOB): self.init_while,
+            (WHT, WHT): self.init_while,
+            (WHT, WHB): self.init_while,
+            
+            
             (IFX, IFB): self.exit_nested,
             (IFX, IFO): self.exit_nested,
+            (IFX, FOB): self.exit_nested,
+            (IFX, WHB): self.exit_nested,
+            
+            
+            
+            (FOX, IFB): self.exit_nested,
+            (FOX, IFO): self.exit_nested,
+            (FOX, FOB): self.exit_nested,
+            (FOX, WHB): self.exit_nested,
+            
+            (WHX, IFB): self.exit_nested,
+            (WHX, IFO): self.exit_nested,
+            (WHX, FOB): self.exit_nested,    
+            (WHX, WHB): self.exit_nested,
 
         }
         self.callbacks = collections.defaultdict( \
@@ -443,6 +558,30 @@ class Visitor(ast.NodeVisitor):
         for sub_node in node.orelse:
             self.visit(sub_node)
         self.pda(IFX)
+        
+        
+    def visit_For(self, node):
+        self.node = node
+        self.pda(FOT)
+        self.visit(node.target)
+        self.visit(node.iter)
+        self.place[1] = 0
+        self.pda(FOB)
+        for subnode in node.body + node.orelse:
+            self.visit(subnode)
+        #self.add_branch(node)
+        self.pda(FOX)
+        
+    def visit_While(self, node):
+        self.node = node
+        self.pda(WHT)
+        self.visit(node.test)
+        self.place[1] = 0
+        self.pda(WHB)
+        for subnode in node.body + node.orelse:
+            self.visit(subnode)
+        #self.add_branch(node)
+        self.pda(WHX)
        
 
     def generic_visit(self, node, events=(O_E, O_X)):
@@ -455,6 +594,7 @@ class Visitor(ast.NodeVisitor):
     def line_handler(self, event, stack_event):
         if hasattr(self.node, 'lineno'):
             self.report.top.add_line(self.node.lineno)
+
 
 
     def init_module(self, event, stack_event):
@@ -550,14 +690,24 @@ class Visitor(ast.NodeVisitor):
     def init_if(self, event, stack_event):
         self.place[1] = 1
         self.report.push(Status(lineno=self.node.lineno, linetype=IfLine, hit_count = self.hit_count, branch_rate=Rate(1, 2), place = self.place, class_data = self.class_data))
-
         
+    
+    def init_for(self, event, stack_event):
+        self.place[1] = 1
+        self.report.push(Status(lineno=self.node.lineno, linetype=ForLine, hit_count = self.hit_count, branch_rate=Rate(1, 2), place = self.place, class_data = self.class_data))
+
+    def init_while(self, event, stack_event):
+        self.place[1] = 1
+        self.report.push(Status(lineno=self.node.lineno, linetype=WhileLine, hit_count = self.hit_count, branch_rate=Rate(1, 2), place = self.place, class_data = self.class_data))
+
         
     @property
     def status(self):
         '''return top of self.report stack'''
         return self.report.top
 
+
+###
 
 ###
 
