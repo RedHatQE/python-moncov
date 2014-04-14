@@ -30,6 +30,15 @@ class MyClass(object):
                 pass
             egg_method(yolk='yellow')
         chicken_method()
+        
+        i = 0
+        while i < 3:
+            if i == 2:
+                pass
+            for j in [1, 2, 3]:
+                print j
+            i += 1
+        
         if True:
                 pass
         else:
@@ -41,6 +50,23 @@ for i in range(2):
     pass
 else:
     pass
+    
+i = 0
+while i < 3:
+    if i == 2:
+        pass
+    for j in [1, 2, 3]:
+        print j
+    i += 1
+
+for j in [1, 2, 3]:
+    if j == 1:
+        print "Makaka!"
+    else:
+        i = 1
+        while i !=3:
+            i+=1
+        print j
 
 class Foo(object):
     mcls = MyClass()
@@ -69,4 +95,13 @@ else:
 
 print "Really, Good Bye!"
 
+while i < 10:
+    j = 0
+    while j < 5:
+        print j
+        j += 1
+        for k in [1, 2, 3, 4, 5]:
+            for p in [1,2,3]:
+                print k, p
+    i +=1
 
