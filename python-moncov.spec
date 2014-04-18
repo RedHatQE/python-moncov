@@ -1,5 +1,5 @@
 Name:		python-moncov
-Version:	0.5.8
+Version:	0.5.9
 Release:	1%{?dist}
 Summary:	Python code coverage using MongoDB
 
@@ -58,6 +58,14 @@ fi
 %{_bindir}/moncov
 
 %changelog
+* Fri Apr 18 2014 dparalen <vetrisko@gmail.com> 0.5.9-1
+- Update README.md (vetrisko@gmail.com)
+- introducing simple xml output (vetrisko@gmail.com)
+- introducing custom str (vetrisko@gmail.com)
+- introducing nesting branch--non-branch code (vetrisko@gmail.com)
+- removing trailing whitespaces (vetrisko@gmail.com)
+- test cases branch_rate (igulina@redhat.com)
+
 * Mon Apr 14 2014 dparalen <vetrisko@gmail.com> 0.5.8-1
 - fix issue#7 (vetrisko@gmail.com)
 - add weird test cases for while false (igulina@redhat.com)
