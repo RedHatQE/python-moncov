@@ -230,3 +230,8 @@ class Test(GenericMoncovTest):
         with tracing_import('function_value_if_value_else', db=self.db) as module: 
             module.function(True); module.function(False)
         self.assertResultBranchRate(Rate(2, 2))
+
+    def test_46_if_true_def_if_true_else(self):
+        with tracing_import('if_true_def_if_true_false', db=self.db) as module:
+            pass
+        self.assertResultBranchRate(Rate(2, 3))
