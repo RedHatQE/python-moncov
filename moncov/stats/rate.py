@@ -20,6 +20,9 @@ class Rate(fractions.Fraction):
     def __repr__(self):
         return '%s(%r, %r)' % (type(self).__name__, self.numerator, self.denominator)
 
+    def __str__(self):
+        return '%s/%s' % (self.numerator, self.denominator)
+
     @property
     def fraction(self):
         '''return a fraction created out of a rate instance'''
