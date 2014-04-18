@@ -75,6 +75,15 @@ def simple(dbhost, dbport, dbname, whitelist, blacklist):
     db = moncov.conf.get_db(dbhost=dbhost, dbport=dbport, dbname=dbname)
     moncov.stats.simple.print_stats(db=db, whitelist=whitelist, blacklist=blacklist)
 
+@app.cmd(help='simple xml stats')
+@app.cmd_arg('-f', '--whitelist', help='filter regexps', default=moncov.conf.WHITELIST, action=ReAction, nargs='+')
+@app.cmd_arg('-g', '--blacklist', help='filter regexps', default=moncov.conf.BLACKLIST, action=ReAction, nargs='+')
+@app.cmd_arg('-o', '--output', help='output xml filename', default='moncov.xml')
+@catching
+def simple_xml(dbhost, dbport, dbname, whitelist, blacklist, output):
+    db = moncov.conf.get_db(dbhost=dbhost, dbport=dbport, dbname=dbname)
+    with open(output, 'w+') as fd:
+        fd.write(moncov.stats.simple.get_stats_xml(db=db, whitelist=whitelist, blacklist=blacklist)) 
 
 @catching
 @app.cmd(help='calculate stats updates')

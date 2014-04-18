@@ -1,20 +1,23 @@
 import ast
 import moncov
 import collections
+import os
 from rate import Rate
 
 class Visitor(ast.NodeVisitor):
     def __init__(self, hit_count={}):
         self.hit_count = hit_count
         self.lines = set()
+        self.branches = set()
+        self.conditions = {}
         self.line_rate = None
         self.branch_rate = None
 
     def add_line(self, node):
-        '''ad node and update self.line_rate'''
+        '''ad node and update self.line_rate return True if line was added'''
         if not hasattr(node, 'lineno') or node.lineno in self.lines:
             # already encountered --- skip
-            return
+            return False
         self.lines.add(node.lineno)
         if node.lineno in self.hit_count:
             # this line was executed
@@ -26,9 +29,10 @@ class Visitor(ast.NodeVisitor):
             self.line_rate = rate
         else:
             self.line_rate |= rate
+        return True
 
-    def add_branch(self, node):
-        '''add a branched node and update self.branch_rate'''
+    def get_condition_rate(self, node):
+        '''figure out current node's condition rate/coverate'''
         orelse_hits = set([subnode.lineno for subnode in node.orelse if
                             hasattr(subnode, 'lineno') and subnode.lineno in self.hit_count])
         body_hits = set([subnode.lineno for subnode in node.body if
@@ -52,40 +56,53 @@ class Visitor(ast.NodeVisitor):
                 rate = Rate(1, 1)
             else:
                 rate = Rate(0, 1)
+        return rate
+
+    def get_branch_rate(self, node):
+        '''figure out current node's branch rate'''
+        rate = self.get_condition_rate(node)
+        for subnode in node.body + node.orelse:
+            sub_rate = self.visit(subnode)
+            if sub_rate is not None:
+                sub_rate |= rate
+        return rate
+
+
+    def add_branch(self, node):
+        '''add a branched node and update self.branch_rate'''
+        branch_rate = self.get_branch_rate(node)
         if self.branch_rate is None:
             # initial state
-            self.branch_rate = rate
+            self.branch_rate = branch_rate
         else:
-            self.branch_rate |= rate
-
+            self.branch_rate |= branch_rate
+        self.branches.add(node.lineno)
+        self.conditions[node.lineno] = self.get_condition_rate(node)
 
     def visit_If(self, node):
         '''visit all If-sub nodes and update branch rate'''
+        self.add_line(node)
         self.visit(node.test)
-        for subnode in node.body + node.orelse:
-            self.visit(subnode)
-        self.add_branch(node)
+        return self.add_branch(node)
 
     def visit_While(self, node):
+        self.add_line(node)
         self.visit(node.test)
-        for subnode in node.body + node.orelse:
-            self.visit(subnode)
-        self.add_branch(node)
+        return self.add_branch(node)
 
     def visit_For(self, node):
+        self.add_line(node)
         self.visit(node.target)
         self.visit(node.iter)
-        for subnode in node.body + node.orelse:
-            self.visit(subnode)
-        self.add_branch(node)
+        return self.add_branch(node)
 
     def generic_visit(self, node):
         self.add_line(node)
-        super(Visitor, self).generic_visit(node)
+        return super(Visitor, self).generic_visit(node)
 
 
 FileStatus = collections.namedtuple('FileStatus', ['filename',
-                'branch_rate', 'line_rate'])
+                'branch_rate', 'line_rate', 'branches', 'lines', 'conditions', 'hit_count'])
 FileErrorStatus = collections.namedtuple('FileErrorStatus', ['filename', 'error'])
 
 def get_stats(db=None, whitelist=None, blacklist=None):
@@ -124,7 +141,8 @@ def get_stats(db=None, whitelist=None, blacklist=None):
         visitor.visit(tree)
 
         stats.append(FileStatus(filename=filename, line_rate=visitor.line_rate,
-                branch_rate=visitor.branch_rate))
+                branch_rate=visitor.branch_rate, lines=visitor.lines, branches=visitor.branches,
+                hit_count=visitor.hit_count, conditions=visitor.conditions))
 
     return stats
 
@@ -147,5 +165,63 @@ def print_stats(db=None, whitelist=None, blacklist=None):
         else:
             print "# bad file_status: %r" % file_status
 
+def get_stats_xml(db=None, whitelist=None, blacklist=None):
+        '''return a header-only cobertura xml'''
+        stats = get_stats(db=db, whitelist=whitelist, blacklist=blacklist)
+        # calculate overall rates
+        good_stats = [result for result in stats if type(result) is FileStatus]
+        branch_rates = [result.branch_rate for result in good_stats
+                            if type(result.branch_rate) is Rate]
+        line_rates = [result.line_rate for result in good_stats
+                            if type(result.line_rate) is Rate]
+        line_rate = None
+        if line_rates:
+            line_rate = reduce(lambda result, rate: result | rate,
+                                    line_rates[1:], line_rates[0])
+        branch_rate = None
+        if branch_rates:
+            branch_rate = reduce(lambda result, rate: result | rate,
+                                    branch_rates[1:], branch_rates[0])
+        # create module xml nodes
+        import time
+        import lxml.etree as ET
+        from lxml.builder import E
+        packages = []
+        for result in good_stats:
+            line_elements = []
+            for line in result.lines:
+                line_element = E.line(number=str(line), hits=line in result.hit_count and \
+                                    str(result.hit_count[line]) or "0")
+                if line in result.branches:
+                    line_element.set('branch', 'true')
+                    line_element.set('condition-coverage', "{0:.2%} ({1:})".format(
+                                        float(result.conditions[line]), result.conditions[line]))
+                line_elements.append(line_element)
+            class_element = E("class", E.methods(), E.lines(*line_elements), name=os.path.basename(result.filename),
+                                complexity='0.00', filename=result.filename)
+            class_element.set('branch-rate', "%1.4f" % (result.branch_rate or 0.0))
+            class_element.set('line-rate', "%1.4f" % (result.line_rate or 0.0))
+            package = E.package(E.classes(class_element), name="", complexity='0.00')
+            package.set('branch-rate', "%1.4f" % (result.branch_rate or 0.0))
+            package.set('line-rate', "%1.4f" % (result.line_rate or 0.0))
+            packages.append(package)
+        tree = E.coverage(
+            E.packages(*packages),
+            timestamp=str(int(time.time()*1000)),
+            version='3.7',
+            complexity='0.00'
+        )
+        tree.set('branch-rate', '%1.4f' % (branch_rate or 0.0))
+        tree.set('line-rate', '%1.4f' % (line_rate or 0.0))
+        tree.set('lines-covered', str(line_rate.denominator) or "0")
+        tree.set('lines-valid', str(line_rate.numerator) or "0")
+        tree.set('branches-covered', str(branch_rate.denominator) or "0")
+        tree.set('branches-valid', str(branch_rate.numerator) or "0")
+        return ET.tostring(tree, pretty_print=True, xml_declaration=True,
+                            doctype="<!DOCTYPE coverage SYSTEM 'http://cobertura.sourceforge.net/xml/coverage-04.dtd'>")
+
+
+
 if __name__ == '__main__':
-    print_stats()
+    #print_stats()
+    print get_stats_xml()
