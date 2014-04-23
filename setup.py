@@ -4,7 +4,7 @@ from setuptools import setup
 import glob, os
 
 setup(name='moncov',
-    version='0.5.9',
+    version='0.5.10',
     description='Python remote code coverage using MongoDB',
     author='Vitaly Kuznetsov',
     author_email='vitty@redhat.com',

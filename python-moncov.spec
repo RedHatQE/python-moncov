@@ -1,5 +1,5 @@
 Name:		python-moncov
-Version:	0.5.9
+Version:	0.5.10
 Release:	1%{?dist}
 Summary:	Python code coverage using MongoDB
 
@@ -58,6 +58,9 @@ fi
 %{_bindir}/moncov
 
 %changelog
+* Wed Apr 23 2014 dparalen <vetrisko@gmail.com> 0.5.10-1
+- 
+
 * Fri Apr 18 2014 dparalen <vetrisko@gmail.com> 0.5.9-1
 - Update README.md (vetrisko@gmail.com)
 - introducing simple xml output (vetrisko@gmail.com)
