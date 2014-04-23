@@ -21,7 +21,7 @@ def catching(func):
         try:
             func(*args, **kvs)
         except Exception as e:
-            log.error(func.func_name + ' failed: %r' % e.message)
+            log.error(func.func_name + ' failed: %r' % e)
             sys.exit(2)
     return decorated
 
