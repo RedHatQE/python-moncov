@@ -213,10 +213,10 @@ def get_stats_xml(db=None, whitelist=None, blacklist=None):
         )
         tree.set('branch-rate', '%1.4f' % (branch_rate or 0.0))
         tree.set('line-rate', '%1.4f' % (line_rate or 0.0))
-        tree.set('lines-covered', str(line_rate.denominator) or "0")
-        tree.set('lines-valid', str(line_rate.numerator) or "0")
-        tree.set('branches-covered', str(branch_rate.denominator) or "0")
-        tree.set('branches-valid', str(branch_rate.numerator) or "0")
+        tree.set('lines-covered', line_rate and str(line_rate.denominator) or "0")
+        tree.set('lines-valid', line_rate and str(line_rate.numerator) or "0")
+        tree.set('branches-covered', branch_rate and str(branch_rate.denominator) or "0")
+        tree.set('branches-valid', branch_rate and str(branch_rate.numerator) or "0")
         return ET.tostring(tree, pretty_print=True, xml_declaration=True,
                             doctype="<!DOCTYPE coverage SYSTEM 'http://cobertura.sourceforge.net/xml/coverage-04.dtd'>")
 
