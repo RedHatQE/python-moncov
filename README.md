@@ -19,6 +19,7 @@ Hints
 * `events_count in /etc/moncov.yaml` can be adjusted to reduce record drops
 * `moncov update -s` forks a daemon that updates the stats each -t seconds
 * use `moncov simple_xml -o coverage.xml` to feed cobertura and alike
+* please, refer to [stack overflow] (http://stackoverflow.com/questions/15759150/src-lxml-etree-defs-h931-fatal-error-libxml-xmlversion-h-no-such-file-or-di) should pip install fail for you with `libxml/xmlversion.h: No such file or directory`
 
 
 Notes
