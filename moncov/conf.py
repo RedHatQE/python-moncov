@@ -3,6 +3,8 @@ import logging
 import re
 import pymongo
 
+_DBCACHE = {}
+
 log = logging.getLogger(__name__)
 
 try:
@@ -30,10 +32,14 @@ except Exception as e:
     BLACKLIST = []
 
 def get_connection(dbhost=DBHOST, dbport=DBPORT):
-    return pymongo.connection.Connection(dbhost, dbport)
+    if (dbhost, dbport) not in _DBCACHE:
+        _DBCACHE[dbhost, dbport] = pymongo.mongo_client.MongoClient(dbhost, dbport)
+    return _DBCACHE[dbhost, dbport]
 
 def get_db(dbhost=DBHOST, dbport=DBPORT, dbname=DBNAME):
-    return pymongo.database.Database(get_connection(dbhost, dbport), dbname)
+    if (dbhost, dbport, dbname) not in _DBCACHE:
+        _DBCACHE[dbhost, dbport, dbname] = get_connection(dbhost, dbport)[dbname]
+    return _DBCACHE[dbhost, dbport, dbname]
 
 def get_dbdetails(db=None):
     '''return dbhostname, dbport, dbname'''
