@@ -1,5 +1,5 @@
 Name:		python-moncov
-Version:	0.5.11
+Version:	0.5.12
 Release:	1%{?dist}
 Summary:	Python code coverage using MongoDB
 
@@ -58,6 +58,10 @@ fi
 %{_bindir}/moncov
 
 %changelog
+* Mon Apr 28 2014 dparalen <vetrisko@gmail.com> 0.5.12-1
+- fix: changed connection- to client-based communication+caching
+  (vetrisko@gmail.com)
+
 * Fri Apr 25 2014 dparalen <vetrisko@gmail.com> 0.5.11-1
 - Update README.md (vetrisko@gmail.com)
 - fix: no stats handling (vetrisko@gmail.com)
