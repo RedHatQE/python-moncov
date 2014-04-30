@@ -1,6 +1,6 @@
 if True:
 	if False:
-		pass
+		None
 else:
 	if True:
-		pass
+		None

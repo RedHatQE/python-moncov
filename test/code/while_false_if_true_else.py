@@ -3,5 +3,3 @@ while False:
 		pass
 	else:
 		print 'blah'
-		
-
