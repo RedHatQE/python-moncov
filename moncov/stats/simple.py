@@ -194,8 +194,8 @@ def get_stats_xml(db=None, whitelist=None, blacklist=None):
                                     str(result.hit_count[line]) or "0")
                 if line in result.branches:
                     line_element.set('branch', 'true')
-                    line_element.set('condition-coverage', "{0:.2%} ({1:})".format(
-                                        float(result.conditions[line]), result.conditions[line]))
+                    line_element.set('condition-coverage', "{0:}% ({1:})".format(
+                                        int(result.conditions[line]*100), result.conditions[line]))
                 line_elements.append(line_element)
             class_element = E("class", E.methods(), E.lines(*line_elements), name=os.path.basename(result.filename),
                                 complexity='0.00', filename=result.filename)
