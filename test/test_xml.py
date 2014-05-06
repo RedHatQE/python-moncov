@@ -7,8 +7,6 @@ import re
 
 class Test(GenericMoncovTest):
 
-
-
     def test_01_filename(self):
         with tracing_import('./code/if_true_else', db=self.db) as module:
             pass
