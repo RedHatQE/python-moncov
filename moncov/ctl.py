@@ -45,11 +45,15 @@ def init(db=None, dbhost=conf.DBHOST, dbport=conf.DBPORT, dbname=conf.DBNAME,
     if db is None:
         db = conf.get_db(dbhost=dbhost, dbport=dbport, dbname=dbname)
     import pymongo
+    if not db.last_event.count():
+        # this race-condition isn't that bad
+        # db.last_event[0] should be used when update is called
+        # the condition should only bind the max length of db.last_event
+        pivot = {'event_id': pymongo.helpers.bson.ObjectId()}
+        db.last_event.insert(pivot)
     try:
         db.create_collection(name="events", capped=True, max=events_count,
                             size=events_totalsize)
-        pivot = {'event_id': pymongo.helpers.bson.ObjectId()}
-        db.last_event.insert(pivot)
     except pymongo.errors.CollectionInvalid as e:
         # already has such collection; ok
         log.info("Events collection already present in %r: %r" % (db, e))
