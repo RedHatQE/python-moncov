@@ -1,5 +1,5 @@
 Name:		python-moncov
-Version:	0.5.12
+Version:	0.5.13
 Release:	1%{?dist}
 Summary:	Python code coverage using MongoDB
 
@@ -58,6 +58,14 @@ fi
 %{_bindir}/moncov
 
 %changelog
+* Tue May 06 2014 dparalen <vetrisko@gmail.com> 0.5.13-1
+- fix: covered/valid values (vetrisko@gmail.com)
+- fix/enhance: sometimes no process/thread happened to set any pivot at all;
+  the result would have been no lines collected; should fix issue#1, too
+  (vetrisko@gmail.com)
+- fix conditions in xml (igulina@redhat.com)
+- introducing line_rate tests (igulina@redhat.com)
+
 * Mon Apr 28 2014 dparalen <vetrisko@gmail.com> 0.5.12-1
 - fix: changed connection- to client-based communication+caching
   (vetrisko@gmail.com)
