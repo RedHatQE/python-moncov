@@ -107,4 +107,22 @@ class GenericMoncovTest(unittest.TestCase):
         result = moncov.stats.simple.get_stats(db=self.db, whitelist=[re.compile('.*')], blacklist=[])
         assert len(result) == 1, "just a single file measured: %r" % result
         status = result[0]
+        #print result
         self.assertEqual(status.filename, filename)
+
+
+    def assertXMLBranchRate(self, rate):
+        '''assert single result branch rate'''
+        result = moncov.stats.simple.get_stats(db=self.db, whitelist=[re.compile('.*')], blacklist=[])
+        assert len(result) == 1, "just a single file measured: %r" % result
+        status = result[0]
+        branch_rate = "{0:.4f}".format(float(status.branch_rate))
+        self.assertEqual(branch_rate, rate)
+
+    def assertXMLLineRate(self, rate):
+        '''assert single result line rate'''
+        result = moncov.stats.simple.get_stats(db=self.db, whitelist=[re.compile('.*')], blacklist=[])
+        assert len(result) == 1, "just a single file measured: %r" % result
+        status = result[0]
+        line_rate = "{0:.4f}".format(float(status.line_rate))
+        self.assertEqual(line_rate, rate)
