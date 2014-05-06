@@ -101,3 +101,10 @@ class GenericMoncovTest(unittest.TestCase):
         assert len(result) == 1, "just a single file measured: %r" % result
         status = result[0]
         self.assertEqual(status.line_rate, rate)
+
+    def assertResultFileName(self, filename):
+        '''assert single result line rate'''
+        result = moncov.stats.simple.get_stats(db=self.db, whitelist=[re.compile('.*')], blacklist=[])
+        assert len(result) == 1, "just a single file measured: %r" % result
+        status = result[0]
+        self.assertEqual(status.filename, filename)
