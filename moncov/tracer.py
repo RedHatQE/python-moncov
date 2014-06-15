@@ -60,9 +60,10 @@ class PyTracer(object):
             # commit changes for current frame
             if not self.stack:
                 return self._trace
-            self.enabled = False # causes a call
+            self.enabled = False # causes calls
             lines = self.stack.pop()
             if not lines:
+                self.enabled = True
                 return self._trace
             try:
                 self.db.events.insert(lines, w=0)
