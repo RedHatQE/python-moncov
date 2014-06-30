@@ -26,37 +26,19 @@ def drop(db=None, host=conf.DBHOST, port=conf.DBPORT, name=conf.DBNAME):
         if db is None:
             db = conf.get_db(host, port, name)
     except Exception as e:
-        log.warning("couldn't get db %r, %r, %r: %r" % (host, port, name, e.message))
+        log.warning("couldn't get db %r, %r, %r: %r" % (host, port, name, e))
     else:
         try:
-            db.connection.drop_database(db)
+            db.flushdb()
         except Exception as e:
-            log.warning('failed to drop %r: %r' % (db, e.message))
+            log.warning('failed to drop %r: %r' % (db, e))
         else:
             log.info("dropped: %r" % db)
 
-def init(db=None, dbhost=conf.DBHOST, dbport=conf.DBPORT, dbname=conf.DBNAME,
-        events_count=conf.EVENTS_COUNT, events_totalsize=conf.EVENTS_TOTALSIZE):
-    '''initialize necessary events collection'''        # uses 2 collections
-    # - lines: indexed by filename,lineno; fields: hits count
-    # - events: capped collection for short-term filename,lineno events
-    #           storage
-    # events is map-reduced to lines with the moncov stats commands
+def init(db=None, dbhost=conf.DBHOST, dbport=conf.DBPORT, dbname=conf.DBNAME):
+    '''initialize necessary events collection'''
     if db is None:
         db = conf.get_db(dbhost=dbhost, dbport=dbport, dbname=dbname)
-    import pymongo
-    if not db.last_event.count():
-        # this race-condition isn't that bad
-        # db.last_event[0] should be used when update is called
-        # the condition should only bind the max length of db.last_event
-        pivot = {'event_id': pymongo.helpers.bson.ObjectId()}
-        db.last_event.insert(pivot)
-    try:
-        db.create_collection(name="events", capped=True, max=events_count,
-                            size=events_totalsize)
-    except pymongo.errors.CollectionInvalid as e:
-        # already has such collection; ok
-        log.info("Events collection already present in %r: %r" % (db, e))
     return db
 
 def get_collecting_code(dbhost, dbport, dbname, whitelist, blacklist):
@@ -70,7 +52,7 @@ def sys_enable(db=None, dbhost=conf.DBHOST, dbport=conf.DBPORT, dbname=conf.DBNA
     '''enable system-wide coverage stats collecting; requires permissions'''
     if db is not None:
         # convert to connection/port/name
-        host, port, name = db.connection.host, db.connection.port, db.name
+        dbhost, dbport, dbname = conf.get_dbdetails(db)
     code = get_collecting_code(dbhost=dbhost, dbport=dbport, dbname=dbname,
                             whitelist=whitelist, blacklist=blacklist)
     log.debug("code to use: %r" % code)

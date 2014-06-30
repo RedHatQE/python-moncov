@@ -110,36 +110,37 @@ def get_stats(db=None, whitelist=None, blacklist=None):
         db = moncov.conf.get_db()
     whitelist = moncov.conf.get_whitelist(whitelist)
     blacklist = moncov.conf.get_blacklist(blacklist)
-    cursor_grouped = db.lines.aggregate([{"$group": {"_id": "$_id.file",
-        "lines": {"$addToSet": {"line": "$_id.line", "value": "$value"}}}}])
+
     stats = []
-    for doc in cursor_grouped['result']:
 
-        filename = doc['_id']
-
-        if not filename:
-            # happens when the db is broken
-            stats.append(FileErrorStatus(filename=filename, error=ValueError('no-filename')))
-            continue
+    for filename in db.smembers('filenames'):
+        # does the filename require processing?
         if not any([pattern.match(filename) for pattern in whitelist]) or \
             any([pattern.match(filename) for pattern in blacklist]):
             stats.append(FileErrorStatus(filename=filename, error=ValueError('filtered-away')))
             continue
+        # fetch the filename content
         try:
             with open(filename) as fd:
                 src = fd.read()
         except Exception as e:
+            # error reading filename --- mark an error status
             stats.append(FileErrorStatus(filename=filename, error=e))
             continue
+        # parse source filename content
         try:
             tree = ast.parse(src)
         except Exception as e:
+            # not valid python code --- could happen because file changed
+            # between being traced and processed here
             stats.append(FileErrorStatus(filename=filename, error=e))
             continue
-        visitor = Visitor(hit_count=dict([(int(pair['line']),
-            int(pair['value'])) for pair in doc['lines']]))
+        # fetch lineno--hitcount stats
+        hit_count = {int(lineno): db.zrank(filename, lineno) for lineno in db.zrange(filename, 0, -1)}
+        # calculate the source file AST rates
+        visitor = Visitor(hit_count=hit_count)
         visitor.visit(tree)
-
+        # record the source filename stats
         stats.append(FileStatus(filename=filename, line_rate=visitor.line_rate,
                 branch_rate=visitor.branch_rate, lines=visitor.lines, branches=visitor.branches,
                 hit_count=visitor.hit_count, conditions=visitor.conditions))

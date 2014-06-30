@@ -1,6 +1,6 @@
 Python code coverage measurement tool
 =====================================
-#### Remote python (t)racer pushing results to a MongoDB
+#### Remote python (t)racer pushing results to a redis store
 
 Usage
 -----
@@ -11,13 +11,10 @@ Usage
 * sudo moncov enable 
 * python misc/sample.py
 * sudo moncov disable
-* moncov update
 * moncov simple | grep sample
 
 Hints
 -----
-* `events_count in /etc/moncov.yaml` can be adjusted to reduce record drops
-* `moncov update -s` forks a daemon that updates the stats each -t seconds
 * use `moncov simple_xml -o coverage.xml` to feed cobertura and alike
 * please, refer to [stack overflow] (http://stackoverflow.com/questions/15759150/src-lxml-etree-defs-h931-fatal-error-libxml-xmlversion-h-no-such-file-or-di) should pip install fail for you with `libxml/xmlversion.h: No such file or directory`
 
@@ -25,8 +22,3 @@ Hints
 Notes
 -----
 * branch rates are a work-in-progress
-* in case of a race condition:
-* loosing line events is OK
-* double-counting line events is bad
-* moncov reset creates a custom pivot to prevent double counting
-* some events might be lost because of the custom pivot election

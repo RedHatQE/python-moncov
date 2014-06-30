@@ -18,17 +18,14 @@ class Collector(object):
                 whitelist=None, blacklist=None):
         self.tracers = []
         self._trace_class = PyTracer
-        from conf import (get_whitelist, get_blacklist, DBHOST, DBPORT, DBNAME)
-        if db is None:
-            self.dbhost = dbhost or DBHOST
-            self.dbport = dbport or DBPORT
-            self.dbname = dbname or DBNAME
+        if db:
+            self.dbhost, self.dbport, self.dbname = conf.get_dbdetails(db)
         else:
-            self.dbhost = db.connection.host
-            self.dbport = db.connection.port
-            self.dbname = db.name
-        self.blacklist = get_blacklist(blacklist)
-        self.whitelist = get_whitelist(whitelist)
+            self.dbhost = dbhost or conf.DBHOST
+            self.dbport = dbport or conf.DBPORT
+            self.dbname = dbname or conf.DBNAME
+        self.blacklist = conf.get_blacklist(blacklist)
+        self.whitelist = conf.get_whitelist(whitelist)
         log.info('using: %r, %r, %r, %r, %r' % (self.dbhost, self.dbport, self.dbname,
                     [x.pattern for x in self.whitelist], [x.pattern for x in self.blacklist]))
 

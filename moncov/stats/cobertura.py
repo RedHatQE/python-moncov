@@ -3,7 +3,7 @@ import ast
 import collections
 import sys
 import fractions
-import pymongo
+import redis
 import time
 
 #to generate xml
@@ -708,30 +708,25 @@ class Visitor(ast.NodeVisitor):
 
 ###
 
-def generate_xml(dbhost = "localhost", dbport = 27017, dbname = 'moncov', output='moncov_branch.xml'):
+def generate_xml(dbhost = "localhost", dbport = 6379, dbname = 0, output='moncov_branch.xml'):
 
-    connection=pymongo.connection.Connection(dbhost, dbport)
-    db=pymongo.database.Database(connection, dbname)
-    cursor=list(db.lines.find())
-    cursor_grouped = db.lines.aggregate([{"$group": {"_id": "$_id.file",
-        "lines": {"$addToSet": {"line": "$_id.line", "hits": "$value"}}}}])
+    db = redis.StrictRedis(dbhost, dbport, dbname)
 
-    for doc in cursor_grouped['result']:
+    for filename in db.smembers('filenames'):
 
-        if str(doc['_id']).startswith('<'):
+        if filename.startswith('<'):
             continue
 
         try:
-            with open(str(doc['_id'])) as fd:
-                xml[-2][-2].text = str(doc['_id'])
+            with open(filename) as fd:
+                xml[-2][-2].text = filename
                 xml[-2][-1].text = '--source'
                 hit_list = {}
-                for element in doc['lines']:
-                    hit_list[element['line']] = element['hits']
+                for lineno in db.zrange(filename, 0, -1):
+                    hit_list[int(lineno)] = db.zrank(filename, lineno)
 
-                filename = str(doc['_id'])
                 src = fd.read()
-                print "Opened file: %s" % str(doc['_id'])
+                print "Opened file: %s" % filename
 
             tree = ast.parse(src)
             #print src
@@ -747,7 +742,7 @@ def generate_xml(dbhost = "localhost", dbport = 27017, dbname = 'moncov', output
             print visitor.status
 
         except IOError as e:
-            print "Can't read: %s" % e.message, str(doc['_id'])
+            print "Can't read: %s" % e.message, filename
             #sys.exit(2)
 
 

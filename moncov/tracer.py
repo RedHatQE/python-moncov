@@ -7,80 +7,84 @@ log = logging.getLogger(__name__)
 _SHOULD_TRACE = {}
 
 class PyTracer(object):
-    def __init__(self, dbhost="localhost", dbport=27017, dbname='moncov', blacklist=[], whitelist=[]):
+
+    def __init__(self, dbhost="localhost", dbport=6379, dbname=0, blacklist=[], whitelist=[]):
         self.blacklist = blacklist
         self.whitelist = whitelist
         self._should_process = getattr(sys.modules[__name__], '_SHOULD_TRACE')
-        # a stack of line lists for caching inserts of executed lines
-        self.stack = [[]]
-        # uses 2 collections
-        # - lines: indexed by filename,lineno; fields: hits count
-        # - events: capped collection for short-term filename,lineno events
-        #           storage
-        # events is map-reduced to lines with the moncov stats commands
         try:
-            import ctl
-            self.db = ctl.init(dbhost=dbhost, dbport=dbport, dbname=dbname)
+            import conf
+            self.db = conf.get_db(dbhost, dbport, dbname)
+            # create a redis pipeline. pipeline.execute() need not
+            # be transactional --- all operations should be just increments
+            self.pipeline = self.db.pipeline(transaction=False)
         except Exception as e:
-            print >> sys.stderr, "%r, %r error: %r" % (__file__, self, e)
-            self.con = None
-            self.db = None
-            self.enabled = False
-            return
+            log.error("got: %r, disabling." % e)
+            self.stop()
         else:
             self.enabled = True
-        log.info('%r using: %r' % (self, self.db))
+            log.info('%r using: %r' % (self, self.pipeline))
 
 
     def _trace(self, frame, event, arg_unused):
         """The trace function passed to sys.settrace."""
         # reentrance not allowed
-        if not self.enabled or not self.db:
+        if not self.enabled:
             return self._trace
 
+        # does the event need processing?
+        if event != 'line' and event != 'call' and event != 'return' and event != 'exception':
+            return self._trace
+
+        # fetch filename and line number from frame details
         filename, lineno = frame.f_code.co_filename, frame.f_lineno
 
-        # needs processing?
+        # does the filename need processing?
+        # the result of blacklist/whitelist filtering is cached here
+        # the cache is shared between all tracers of a process
+        # the items in the cache stabilize
+        # filename, if first encountered, is marked as being traced in redis, too
+        # all (even remote) tracers have same white/black list
+        # marking of the filenames will happen multiple times but we don't mind
         if filename not in self._should_process:
-            # on black list?
-            self.enabled = False # causes a call --- mask out
+            # mask-out tracing
+            self.enabled = False
             self._should_process[filename] = \
                 any([regexp.match(filename) for regexp in self.whitelist]) and \
                 not any([regexp.match(filename) for regexp in self.blacklist])
+            try:
+                # mark this filename being processed
+                # this might preempt self.pipeline from time to time
+                # we should be safe
+                self.db.sadd('filenames', filename)
+            except Exception as e:
+                log.warning('%s._trace: marking %s traced got exception: %r' %  \
+                        (self, filename, e))
+            # un-mask tracing
             self.enabled = True
         if not self._should_process[filename]:
-           return self._trace
-
-        if event == 'call':
-            # push new frame line insert list
-            self.stack.append([{'file': filename, 'line': lineno}])
+            # the filename doesn't need processing --- filtered out
             return self._trace
 
-        if event == 'return' or event == 'exception':
-            # commit changes for current frame
-            if not self.stack:
-                return self._trace
-            self.enabled = False # causes calls
-            lines = self.stack.pop()
-            if not lines:
-                self.enabled = True
-                return self._trace
-            try:
-                self.db.events.insert(lines, w=0)
-            except Exception as e:
-                print >> sys.stderr, "%r, %r error: %r" % (__file__, self, e)
-            finally:
-                self.enabled = True
-            if event == 'exception':
-                self.stack.append([])
-            return self._trace
+        # process the event
+        try:
+            # mask-out tracing
+            self.enabled = False
+            self.pipeline.zincrby(filename, str(lineno), 1)
+            # flush what we've got and start catching events into pipeline again
+            # in case this event is either call, return or exception
+            # in case not all operations made it to the server, print a warning
+            if event != 'line' and not all(self.pipeline.execute()):
+                log.warning('%s._trace: pipeline.execute missed events' % self)
+        except Exception as e:
+                # self.__dell__ messes with tracing&logging
+                log and log.warning('%s._trace got error: %r' % (self, e))
+        finally:
+            # un-mask tracing
+            self.enabled = True
 
-        if event != 'line':
-            # c_* events not processed
-            return self._trace
 
-        # add filename,lineno to processing list
-        self.stack[-1].append({"file": filename, "line": lineno})
+        # end processing
         return self._trace
 
     def start(self):

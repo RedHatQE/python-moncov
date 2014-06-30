@@ -1,7 +1,7 @@
 import yaml
 import logging
 import re
-import pymongo
+import redis
 
 _DBCACHE = {}
 
@@ -11,41 +11,36 @@ try:
     with open('/etc/moncov.yaml') as fd:
         CFG = yaml.load(fd.read())
 except Exception as e:
-    log.warning("can't read config: %s" % e.message)
+    log.warning("can't read config: %s" % e)
     CFG = {}
 
 DBHOST = CFG.get('dbhost', 'localhost')
-DBPORT = CFG.get('dbport', 27017)
-DBNAME = CFG.get('dbname', 'moncov')
-EVENTS_COUNT = CFG.get('events_count', 8192)
-EVENTS_TOTALSIZE = CFG.get('events_totalsize', EVENTS_COUNT * 1024)
+DBPORT = CFG.get('dbport', 6379)
+DBNAME = CFG.get('dbname', 0)
 
 try:
     WHITELIST = map(lambda item: re.compile(item), CFG.get('whitelist', ['.*']))
 except Exception as e:
-    log.warning("can't process whitelist, using: ['.*']; %s" % e.message)
+    log.warning("can't process whitelist, using: ['.*']; %s" % e)
     WHITELIST = [re.compile('.*')]
 try:
     BLACKLIST = map(lambda item: re.compile(item), CFG.get('blacklist', []))
 except Exception as e:
-    log.warning("can't process blacklist, using: []; %s" % e.message)
+    log.warning("can't process blacklist, using: []; %s" % e)
     BLACKLIST = []
-
-def get_connection(dbhost=DBHOST, dbport=DBPORT):
-    if (dbhost, dbport) not in _DBCACHE:
-        _DBCACHE[dbhost, dbport] = pymongo.mongo_client.MongoClient(dbhost, dbport)
-    return _DBCACHE[dbhost, dbport]
 
 def get_db(dbhost=DBHOST, dbport=DBPORT, dbname=DBNAME):
     if (dbhost, dbport, dbname) not in _DBCACHE:
-        _DBCACHE[dbhost, dbport, dbname] = get_connection(dbhost, dbport)[dbname]
+        _DBCACHE[dbhost, dbport, dbname] = redis.StrictRedis(host=dbhost, port=dbport, db=dbname)
     return _DBCACHE[dbhost, dbport, dbname]
 
 def get_dbdetails(db=None):
     '''return dbhostname, dbport, dbname'''
     if db is None:
         return DBHOST, DBPORT, DBNAME
-    return db.connection.host, db.connection.port, db.name
+    return db.connection_pool.get_connection('ping').host, \
+            db.connection_pool.get_connection('ping').port, \
+            db.connection_pool.get_connection('ping').db
 
 def get_relist(relist):
     if type(relist) is not list:
