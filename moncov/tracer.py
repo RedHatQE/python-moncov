@@ -52,13 +52,14 @@ class PyTracer(object):
             self._should_process[filename] = \
                 any([regexp.match(filename) for regexp in self.whitelist]) and \
                 not any([regexp.match(filename) for regexp in self.blacklist])
-            try:
-                # mark this filename being processed
-                # this might preempt self.pipeline from time to time
-                # we should be safe
-                self.db.sadd('filenames', filename)
-            except Exception as e:
-                log.warning('%s._trace: marking %s traced got exception: %r' %  \
+            if self._should_process[filename]:
+                try:
+                    # mark this filename being processed
+                    # this might preempt self.pipeline from time to time
+                    # we should be safe
+                    self.db.sadd('filenames', filename)
+                except Exception as e:
+                    log.warning('%s._trace: marking %s traced got exception: %r' %  \
                         (self, filename, e))
             # un-mask tracing
             self.enabled = True
