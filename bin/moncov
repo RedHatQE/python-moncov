@@ -19,10 +19,11 @@ def catching(func):
     @functools.wraps(func)
     def decorated(*args, **kvs):
         try:
-            func(*args, **kvs)
+            ret = func(*args, **kvs)
         except Exception as e:
             log.error(func.func_name + ' failed: %r' % e)
-            sys.exit(2)
+            ret = 1
+        return ret
     return decorated
 
 class ReAction(argparse.Action):
@@ -78,7 +79,82 @@ def simple(dbhost, dbport, dbname, whitelist, blacklist):
 def simple_xml(dbhost, dbport, dbname, whitelist, blacklist, output):
     db = moncov.conf.get_db(dbhost=dbhost, dbport=dbport, dbname=dbname)
     with open(output, 'w+') as fd:
-        fd.write(moncov.stats.simple.get_stats_xml(db=db, whitelist=whitelist, blacklist=blacklist)) 
+        fd.write(moncov.stats.simple.get_stats_xml(db=db, whitelist=whitelist, blacklist=blacklist))
+
+@app.cmd(help="Ned Batchelder's coveragepy report")
+@app.cmd_arg('-o', '--output', help='output stats to file')
+@app.cmd_arg('--omit', help='omit specified files', metavar='"PATH1,PATH2,..."')
+@app.cmd_arg('--include', help='include specified files', metavar='"PATH1,PATH2,..."')
+@app.cmd_arg('--source', help='source directories --- such as repos --- to consider for measured files', metavar='"SRC1,SRC2,..."') 
+@app.cmd_arg('--morfs', help='morfs')
+@app.cmd_arg('--ignore-errors', help='ingore errors', action='store_true')
+@app.cmd_arg('--report', help='print report', action='store_true')
+@app.cmd_arg('--xml', help='output in cobertura xml', action='store_true')
+@app.cmd_arg('--html', help='output in html format', action='store_true')
+@app.cmd_arg('--fail-under', help='fail if coverage rate is under specified treshold', metavar='MIN', type=int, default=None)
+@app.cmd_arg('--directory', help='output to directory')
+@app.cmd_arg('--annotate', help='annotate source code', action='store_true')
+@app.cmd_arg('--show-missing', help='show linenumbers that were not executed', action='store_true')
+@app.cmd_arg('--title', help='set title for html output')
+@app.cmd_arg('--rcfile', help='coverage rc file to use')
+@app.cmd_arg('--pylib', help='include pylib', action='store_true')
+@app.cmd_arg('--debug', help='coveragepy debug options')
+@app.cmd_arg('--ned-version', help='show coveragepy version', action='store_true')
+@catching
+def ned(dbhost, dbport, dbname, output, omit, include, source, morfs, ignore_errors, report, xml, html, fail_under,
+        directory, annotate, show_missing, title, rcfile, pylib, debug, ned_version):
+    '''call monkey-patched coveragepy reports'''
+    import coverage
+
+    if ned_version:
+        print coverage.__version__
+        return 0
+
+    moncov.monkey.patch_coveragepy(dbhost=dbhost, dbport=dbport, dbname=dbname)
+
+    # process list options
+    source = coverage.cmdline.unshell_list(source)
+    include = coverage.cmdline.unshell_list(include)
+    omit = coverage.cmdline.unshell_list(omit)
+    debug = coverage.cmdline.unshell_list(debug)
+
+    coverage_ = coverage.coverage(
+        cover_pylib = pylib,
+        config_file = rcfile,
+        source = source,
+        omit = omit,
+        include = include,
+        debug = debug
+    )
+    coverage_.load()
+    report_args = dict (
+        morfs = coverage.cmdline.unglob_args(morfs),
+        ignore_errors = ignore_errors,
+        omit = omit,
+        include = include
+    )
+    if report:
+        total = coverage_.report(show_missing=show_missing, **report_args)
+    if annotate:
+        coverage_.annotate(directory=directory, **report_args)
+    if html:
+        total = coverage_.html_report(directory=directory, title=title, **report_args)
+    if xml:
+        total = coverage_.xml_report(outfile=output, **report_args)
+
+    if fail_under is not None:
+        if 0 < total < 1:
+            total = 1
+        elif 99 < total < 100:
+            total = 100
+        else:
+            total = round(total)
+        if total >= fail_under:
+            return 0
+        else:
+            return 2
+    else:
+        return 0
 
 if __name__ == '__main__':
-    app.run()
+    sys.exit(app.run())

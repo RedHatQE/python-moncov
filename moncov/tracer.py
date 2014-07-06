@@ -12,6 +12,10 @@ class PyTracer(object):
         self.blacklist = blacklist
         self.whitelist = whitelist
         self._should_process = getattr(sys.modules[__name__], '_SHOULD_TRACE')
+        self.last_lineno = -1
+        self.last_exc_back = None
+        # contains a history of self.last_linenos
+        self.stack = []
         try:
             import conf
             self.db = conf.get_db(dbhost, dbport, dbname)
@@ -59,7 +63,7 @@ class PyTracer(object):
                     # we should be safe
                     self.db.sadd('filenames', filename)
                 except Exception as e:
-                    log.warning('%s._trace: marking %s traced got exception: %r' %  \
+                    log and log.warning('%s._trace: marking %s traced got exception: %r' %  \
                         (self, filename, e))
             # un-mask tracing
             self.enabled = True
@@ -67,23 +71,66 @@ class PyTracer(object):
             # the filename doesn't need processing --- filtered out
             return self._trace
 
+        if self.last_exc_back:
+            # handling exc_back situation
+            if frame == self.last_exc_back:
+                # handling exception
+                try:
+                    # mask-out tracing
+                    self.enabled = False
+                    # record the line being executed
+                    self.pipeline.zincrby(filename, str(self.last_lineno) + ',' + str(-self.last_exc_back.f_code.co_firstlineno), 1)
+                    # flush what we've got and start catching events into pipeline again
+                    # in case not all operations made it to the server, print a warning
+                    if not all(self.pipeline.execute()):
+                        log and log.warning('%s._trace: pipeline.execute missed events' % self)
+                except Exception as e:
+                    log and log.warning('%s._trace got error: %r' % (self, e))
+                finally:
+                    # un-mask tracing
+                    self.enabled = True
+                    self.last_lineno = self.stack.pop()
+            self.last_exc_back = None
+
+
         # process the event
-        try:
-            # mask-out tracing
-            self.enabled = False
-            self.pipeline.zincrby(filename, str(lineno), 1)
-            # flush what we've got and start catching events into pipeline again
-            # in case this event is either call, return or exception
-            # in case not all operations made it to the server, print a warning
-            if event != 'line' and not all(self.pipeline.execute()):
-                log.warning('%s._trace: pipeline.execute missed events' % self)
-        except Exception as e:
+        if event == 'call':
+            self.stack.append(self.last_lineno)
+            self.last_lineno = -1
+
+        elif event == 'line':
+            try:
+                # mask-out tracing
+                self.enabled = False
+                # record the line being executed
+                self.pipeline.zincrby(filename, str(self.last_lineno) + ',' + str(lineno), 1)
+            except Exception as e:
+                log and log.warning('%s._trace got error: %r' % (self, e))
+            finally:
+                # un-mask tracing
+                self.enabled = True
+                self.last_lineno = lineno
+
+        elif event == 'return':
+            try:
+                # mask-out tracing
+                self.enabled = False
+                # record return arc
+                self.pipeline.zincrby(filename, str(self.last_lineno) + ',' + str(-frame.f_code.co_firstlineno), 1)
+                # flush what we've got and start catching events into pipeline again
+                # in case not all operations made it to the server, print a warning
+                if not all(self.pipeline.execute()):
+                    log and log.warning('%s._trace: pipeline.execute missed events' % self)
+            except Exception as e:
                 # self.__dell__ messes with tracing&logging
                 log and log.warning('%s._trace got error: %r' % (self, e))
-        finally:
-            # un-mask tracing
-            self.enabled = True
+            finally:
+                # un-mask tracing
+                self.enabled = True
+                self.last_lineno = self.stack.pop()
 
+        elif event == 'exception':
+            self.last_exc_back = frame.f_back
 
         # end processing
         return self._trace
@@ -102,5 +149,9 @@ class PyTracer(object):
     def get_stats(self):
         """Return a dictionary of statistics, or None."""
         return None
+
+    def __del__(self):
+        import sys
+        sys.settrace(None)
 
 
