@@ -13,29 +13,23 @@ class MoncovTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         '''get reference to the db'''
-        cls.db = moncov.conf.get_db(dbname="%s_db" % cls.__name__)
+        cls.db = moncov.conf.get_db()
         cls.whitelist = get_pyfilename_whitelist(__file__)
         cls.blacklist = []
-        pass
 
     @classmethod
     def tearDownClass(cls):
         '''close the db session'''
         moncov.ctl.disable()
         moncov.ctl.drop(db=cls.db)
-        cls.db.connection.close()
-        pass
 
     def setUp(self):
         '''prepare clean db'''
         moncov.ctl.drop(db=self.db)
-        moncov.ctl.init(db=self.db)
-        pass
 
     def tearDown(self):
         '''clean-up db'''
         moncov.ctl.drop(db=self.db)
-        pass
 
     def assertResultBranchRate(self, rate):
         '''assert single result branch rate'''
@@ -49,34 +43,25 @@ class MoncovTest(unittest.TestCase):
         caller = inspect.currentframe().f_back
         return caller.f_code.co_filename, caller.f_lineno
 
-    def test_01_notice(self):
+    def test_sanity(self):
         # enable tracing and count for this line
         @traced(self.db, self.whitelist, self.blacklist)
         def tmp():
             return self.fileline()
         filename, lineno = tmp()
-        # assert the line was counted once
-        response = self.db.lines.find_one({'_id.file': filename, '_id.line': lineno})
-        assert response is not None
-        self.assertGreater(response['value'], 0)
+        # assert the file was collected
+        self.assertTrue(self.db.sismember('filenames', filename))
+        # assert there are collected records
+        self.assertNotEqual([], moncov.data.filename_arcs(self.db, filename))
 
-    def test_02_count(self):
-        @traced(self.db, self.whitelist, self.blacklist)
-        def tmp():
-            return self.fileline()
-        filename, lineno = tmp(); tmp()
-        tmp(); tmp() ; tmp()
-        response = self.db.lines.find_one({'_id.file': filename, '_id.line': lineno})
-        assert response is not None
-        self.assertEqual(response['value'], 5)
+        # sanity
+        self.assertIn(filename, moncov.data.filenames(self.db))
+        arcs = moncov.data.filename_arcs(self.db, filename)
+        # lineno met
+        arc_matches = [lineno == moncov.data.arc2line(arc) for arc in arcs]
+        self.assertTrue(any(arc_matches))
+        # hits count match
+        index = arc_matches.index(True)
+        self.assertEqual(1, moncov.data.filename_arc_hits(self.db, filename, arcs[index]))
 
-    def test_03_no_doublecount(self):
-        @traced(self.db, self.whitelist, self.blacklist)
-        def tmp():
-            return self.fileline()
-        filename, lineno = tmp()
-        moncov.stats.update.update(self.db)
-        response = self.db.lines.find_one({'_id.file': filename, '_id.line': lineno})
-        assert response is not None
-        self.assertEqual(response['value'], 1)
 
