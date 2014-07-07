@@ -9,6 +9,7 @@ import argparse
 import sys
 import logging
 import functools
+import distutils
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__file__)
@@ -117,6 +118,9 @@ def ned(dbhost, dbport, dbname, output, omit, include, source, morfs, ignore_err
     include = coverage.cmdline.unshell_list(include)
     omit = coverage.cmdline.unshell_list(omit)
     debug = coverage.cmdline.unshell_list(debug)
+    # process morfs options
+    if distutils.version.LooseVersion(coverage.__version__) >= '4.0':
+        morfs = coverage.cmdline.unglob_args(morfs)
 
     coverage_ = coverage.coverage(
         cover_pylib = pylib,
@@ -128,7 +132,7 @@ def ned(dbhost, dbport, dbname, output, omit, include, source, morfs, ignore_err
     )
     coverage_.load()
     report_args = dict (
-        morfs = coverage.cmdline.unglob_args(morfs),
+        morfs = morfs,
         ignore_errors = ignore_errors,
         omit = omit,
         include = include
