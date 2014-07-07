@@ -2,6 +2,8 @@ import unittest
 import multiprocessing
 import moncov
 
+__test__ = False # FIXME
+
 def traced_fileline(dbdetails, **kvs): 
     '''returns current filename,lineno pair and ensures the line being traced by moncov'''
     import inspect
