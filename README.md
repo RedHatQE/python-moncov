@@ -1,6 +1,7 @@
 Python code coverage measurement tool
 =====================================
 #### Remote python (t)racer pushing results to a redis store
+#### and Ned Batchelder's coverage.py on-the-fly remote reports wrapper
 
 Usage
 -----
@@ -8,10 +9,10 @@ Usage
 * pip install moncov
 * check /etc/moncov.yaml
 * moncov reset
-* sudo moncov enable 
+* sudo moncov enable
 * python misc/sample.py
 * sudo moncov disable
-* moncov simple | grep sample
+* moncov ned --include "\*sample.py" --report
 
 Hints
 -----
@@ -21,4 +22,6 @@ Hints
 
 Notes
 -----
-* branch rates are a work-in-progress
+* coverage.py report options should match those of coverage.py
+* esp. --xml, --annotate, --fail-under
+* try moncov ned --help
