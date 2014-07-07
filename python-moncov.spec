@@ -1,5 +1,5 @@
 Name:		python-moncov
-Version:	0.5.13
+Version:	0.5.14
 Release:	1%{?dist}
 Summary:	Python code coverage using MongoDB
 
@@ -58,6 +58,23 @@ fi
 %{_bindir}/moncov
 
 %changelog
+* Mon Jul 07 2014 dparalen <vetrisko@gmail.com> 0.5.14-1
+- fix: missing coverage.py dependency (vetrisko@gmail.com)
+- updating readme (vetrisko@gmail.com)
+- fix: black-listing test cases FIXME: port to redis (vetrisko@gmail.com)
+- update to redis datastore (vetrisko@gmail.com)
+- fix: tracing context manager now expects redis datastore (vetrisko@gmail.com)
+- fix: data compatibility (vetrisko@gmail.com)
+- fix: version-dependant args handling (vetrisko@gmail.com)
+- introducing coveragepy deps (vetrisko@gmail.com)
+- introducing coveragepy stats (vetrisko@gmail.com)
+- fix: filtering (vetrisko@gmail.com)
+- introducing a redis-based version (vetrisko@gmail.com)
+- fix: leaking commits (vetrisko@gmail.com)
+- new xml tests (igulina@redhat.com)
+- removing trailing whitespaces (igulina@redhat.com)
+- xml test (igulina@redhat.com)
+
 * Tue May 06 2014 dparalen <vetrisko@gmail.com> 0.5.13-1
 - fix: covered/valid values (vetrisko@gmail.com)
 - fix/enhance: sometimes no process/thread happened to set any pivot at all;
