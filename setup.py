@@ -11,7 +11,7 @@ setup(name='moncov',
     url='https://github.com/RedHatQE/python-moncov',
     license="GPLv3+",
     provides=['moncov'],
-    install_requires=['redis', 'hiredis', 'aaargh', 'PyYAML', 'lxml'],
+    install_requires=['redis', 'hiredis', 'aaargh', 'PyYAML', 'lxml', 'coverage'],
     packages=[
         'moncov',
         'moncov/stats'
