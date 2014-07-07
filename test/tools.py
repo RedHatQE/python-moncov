@@ -16,13 +16,12 @@ def tracing(db=None, whitelist=None, blacklist=None):
         yield collector
     finally:
         moncov.ctl.disable()
-        log.debug('%r events:' % db)
-        for event in db.events.find():
-            log.debug('  %r' % event)
-        moncov.stats.update.update(db=db)
-        log.debug('%r lines:' % db)
-        for line in db.lines.find():
-            log.debug('  %r' % line)
+        if db is not None:
+            log.debug('collected data:')
+            for filename in db.smembers('filenames'):
+                log.debug(' ' + filename)
+                for arc in db.zrange(filename, 0, -1):
+                    log.debug('  ' + arc + ': %s' % db.zrank(filename, arc))
 
 
 def traced(db=None, whitelist=None, blacklist=None):
