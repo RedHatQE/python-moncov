@@ -709,10 +709,10 @@ class Visitor(ast.NodeVisitor):
 ###
 
 def generate_xml(dbhost = "localhost", dbport = 6379, dbname = 0, output='moncov_branch.xml'):
+    import moncov
+    db = moncov.conf.get_db(dbhost, dbport, dbname)
 
-    db = redis.StrictRedis(dbhost, dbport, dbname)
-
-    for filename in db.smembers('filenames'):
+    for filename in moncov.data.filenames(db):
 
         if filename.startswith('<'):
             continue
@@ -722,8 +722,8 @@ def generate_xml(dbhost = "localhost", dbport = 6379, dbname = 0, output='moncov
                 xml[-2][-2].text = filename
                 xml[-2][-1].text = '--source'
                 hit_list = {}
-                for lineno in db.zrange(filename, 0, -1):
-                    hit_list[int(lineno)] = db.zrank(filename, lineno)
+                for arc in moncov.data.filename_arcs(db, filename):
+                    hit_list[moncov.data.arc2line(arc)] = moncov.data.filename_arc_hits(db, filename, arc)
 
                 src = fd.read()
                 print "Opened file: %s" % filename

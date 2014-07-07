@@ -113,7 +113,7 @@ def get_stats(db=None, whitelist=None, blacklist=None):
 
     stats = []
 
-    for filename in db.smembers('filenames'):
+    for filename in moncov.data.filenames(db):
         # does the filename require processing?
         if not any([pattern.match(filename) for pattern in whitelist]) or \
             any([pattern.match(filename) for pattern in blacklist]):
@@ -136,7 +136,10 @@ def get_stats(db=None, whitelist=None, blacklist=None):
             stats.append(FileErrorStatus(filename=filename, error=e))
             continue
         # fetch lineno--hitcount stats
-        hit_count = {int(lineno): db.zrank(filename, lineno) for lineno in db.zrange(filename, 0, -1)}
+        hit_count = {
+            moncov.data.arc2line(arc): moncov.data.filename_arc_hits(db, filename, arc) \
+                for arc in moncov.data.filename_arcs(db, filename)
+        }
         # calculate the source file AST rates
         visitor = Visitor(hit_count=hit_count)
         visitor.visit(tree)
