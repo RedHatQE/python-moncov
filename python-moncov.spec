@@ -11,7 +11,7 @@ BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 BuildArch:      noarch
 
 BuildRequires:	python-devel
-Requires:	python-redis, hiredis, PyYAML, python-lxml
+Requires:	python-redis, hiredis, PyYAML, python-lxml, python-coverage
 
 %description
 Python code coverage using MongoDB
