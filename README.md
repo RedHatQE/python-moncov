@@ -16,12 +16,12 @@ Usage
 
 Hints
 -----
-* use `moncov simple_xml -o coverage.xml` to feed cobertura and alike
+* use `moncov ned --xml -o coverage.xml --ignore-errors` to feed cobertura and alike
 * please, refer to [stack overflow] (http://stackoverflow.com/questions/15759150/src-lxml-etree-defs-h931-fatal-error-libxml-xmlversion-h-no-such-file-or-di) should pip install fail for you with `libxml/xmlversion.h: No such file or directory`
 
 
 Notes
 -----
-* coverage.py report options should match those of coverage.py
+* `moncov ned` report options should match those of coverage.py
 * esp. `--xml, --annotate, --fail-under`
 * try moncov ned --help
