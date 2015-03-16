@@ -12,6 +12,7 @@ class Rate(fractions.Fraction):
             if denominator is None:
                 self = super(Rate, cls).from_float(float(numerator))
                 return self
+            self = super(Rate, cls).__new__(cls, numerator, denominator)
             gcd = fractions.gcd(numerator, denominator)
             self._numerator *= gcd
             self._denominator *= gcd
