@@ -57,10 +57,10 @@ def sys_enable(db=None, dbhost=conf.DBHOST, dbport=conf.DBPORT, dbname=conf.DBNA
                             whitelist=whitelist, blacklist=blacklist)
     log.debug("code to use: %r" % code)
     import os
-    import site
+    from distutils import sysconfig
     import re
     # FIXME: implement with setup??
-    filename = os.path.join(site.getsitepackages()[1], SITE_FILENAME)
+    filename = os.path.join(sysconfig.get_python_lib(), SITE_FILENAME)
     try:
         with open(filename, 'w+') as fd:
             fd.write(code)
@@ -71,9 +71,9 @@ def sys_enable(db=None, dbhost=conf.DBHOST, dbport=conf.DBPORT, dbname=conf.DBNA
 
 def sys_disable(*args, **kvs):
     '''disable system-wide coverage stats collecting'''
-    import site
     import os
-    filename = os.path.join(site.getsitepackages()[1], SITE_FILENAME)
+    from distutils import sysconfig
+    filename = os.path.join(sysconfig.get_python_lib(), SITE_FILENAME)
     # FIXME: implement with setup??
     try:
         os.unlink(filename)
