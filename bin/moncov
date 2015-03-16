@@ -34,8 +34,8 @@ class ReAction(argparse.Action):
         setattr(namespace, self.dest, [re.compile(value) for value in values])
 
 app = aaargh.App(description='moncov collects coverage remotelly')
-app.arg('-a', '--dbhost', help='Host name of the MongoDB to use', default=moncov.conf.DBHOST)
-app.arg('-b', '--dbport', help='Port of the MongoDB service', type=int, default=moncov.conf.DBPORT)
+app.arg('-a', '--dbhost', help='Host name of the Redis to use', default=moncov.conf.DBHOST)
+app.arg('-b', '--dbport', help='Port of the Redis service', type=int, default=moncov.conf.DBPORT)
 app.arg('-c', '--dbname', help='Name of the db to collect stats in', default=moncov.conf.DBNAME)
 
 @app.cmd(help='cobertura xml output')

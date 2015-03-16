@@ -1,5 +1,5 @@
 [Unit]
-Description=collect coverage statistics in a (remote) MongoDb
+Description=collect coverage statistics in a (remote) Redis instance
 Requires=system.network
 
 [Service]

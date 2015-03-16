@@ -1,7 +1,7 @@
 Name:		python-moncov
 Version:	0.5.14
 Release:	1%{?dist}
-Summary:	Python code coverage using MongoDB
+Summary:	Python code coverage using Redis
 
 Group:		Development/Python
 License:	GPLv3+
@@ -14,7 +14,7 @@ BuildRequires:	python-devel
 Requires:	python-redis, hiredis, PyYAML, python-lxml, python-coverage
 
 %description
-Python code coverage using MongoDB
+Python code coverage using Redis
 
 %prep
 %setup -q

@@ -154,7 +154,7 @@ TBL = {
 }
 
 
-#get data from mongo
+#get data from redis
 
 #create xml skeleton
 E = ElementMaker()

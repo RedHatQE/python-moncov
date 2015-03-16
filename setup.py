@@ -5,7 +5,7 @@ import glob, os
 
 setup(name='moncov',
     version='0.5.14',
-    description='Python remote code coverage using MongoDB',
+    description='Python remote code coverage using Redis',
     author='Vitaly Kuznetsov',
     author_email='vitty@redhat.com',
     url='https://github.com/RedHatQE/python-moncov',
