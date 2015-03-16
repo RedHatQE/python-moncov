@@ -32,6 +32,17 @@ class Rate(fractions.Fraction):
         return type(self)(self.numerator + other.numerator,
                         self.denominator + other.denominator)
 
+    def __and__(self, other):
+        '''grow the portion and pie size if both self and other are not zero'''
+        if self != 0 and other != 0:
+            return self | other
+        elif self == 0 and other != 0:
+            return other
+        elif self !=0 and other == 0:
+            return self
+        else:
+            return Rate(0)
+
     def __repr__(self):
         return '%s(%r, %r)' % (type(self).__name__, self.numerator, self.denominator)
 
