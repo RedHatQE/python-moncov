@@ -2,15 +2,29 @@ import fractions
 
 class Rate(fractions.Fraction):
 
-    def __new__(cls, numerator=0, denominator=None):
-        '''avoid reduction'''
-        self = super(Rate, cls).__new__(cls, numerator, denominator)
-        if denominator is None:
+    from distutils.sysconfig import get_python_version
+    from distutils.version import LooseVersion
+
+    if get_python_version() <= LooseVersion('2.6'):
+        # avoid 2.6 Fraction panicking when denominator is None
+        def __new__(cls, numerator=0, denominator=None):
+            '''avoid reduction'''
+            if denominator is None:
+                self = super(Rate, cls).from_float(float(numerator))
+                return self
+            gcd = fractions.gcd(numerator, denominator)
+            self._numerator *= gcd
+            self._denominator *= gcd
             return self
-        gcd = fractions.gcd(numerator, denominator)
-        self._numerator *= gcd
-        self._denominator *= gcd
-        return self
+    else:
+        def __new__(cls, numerator=0, denominator=None):
+            '''avoid reduction'''
+            self = super(Rate, cls).__new__(cls, numerator, denominator)
+            if denominator is None:
+                return self
+            gcd = fractions.gcd(numerator, denominator)
+            self._numerator *= gcd
+            return self
 
     def __or__(self, other):
         '''grow the portion and the pie size'''
