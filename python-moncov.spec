@@ -1,5 +1,5 @@
 Name:		python-moncov
-Version:	0.5.14
+Version:	0.5.15
 Release:	1%{?dist}
 Summary:	Python code coverage using Redis
 
@@ -58,6 +58,17 @@ fi
 %{_bindir}/moncov
 
 %changelog
+* Mon Mar 16 2015 dparalen <vetrisko@gmail.com> 0.5.15-1
+- removing mongo references (vetrisko@gmail.com)
+- fix: missing super call (vetrisko@gmail.com)
+- 26: allow a None for denominator (vetrisko@gmail.com)
+- fix: duplicate code (vetrisko@gmail.com)
+- fix: make 2.6 work (vetrisko@gmail.com)
+- fix: better site-packages path handling (works in 2.6 as well)
+  (vetrisko@gmail.com)
+- Update README.md (vetrisko@gmail.com)
+- Update README.md (vetrisko@gmail.com)
+
 * Mon Jul 07 2014 dparalen <vetrisko@gmail.com> 0.5.14-1
 - fix: missing coverage.py dependency (vetrisko@gmail.com)
 - updating readme (vetrisko@gmail.com)
