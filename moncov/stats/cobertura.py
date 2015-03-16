@@ -2,7 +2,7 @@
 import ast
 import collections
 import sys
-import fractions
+from rate import Rate
 import redis
 import time
 
@@ -213,43 +213,6 @@ class Stack(object):
     def pop(self):
         return self.data.pop()
 
-
-class Rate(fractions.Fraction):
-
-    def __new__(cls, numerator=0, denominator=None):
-        '''avoid reduction'''
-        self = super(Rate, cls).__new__(cls, numerator, denominator)
-        if denominator is None:
-            return self
-        gcd = fractions.gcd(numerator, denominator)
-        self._numerator *= gcd
-        self._denominator *= gcd
-        return self
-
-    def __or__(self, other):
-        '''grow the portion and the pie size'''
-        return type(self)(self.numerator + other.numerator,
-                        self.denominator + other.denominator)
-
-    def __and__(self, other):
-        '''grow the portion and pie size if both self and other are not zero'''
-        if self != 0 and other != 0:
-            return self | other
-        elif self == 0 and other != 0:
-            return other
-        elif self !=0 and other == 0:
-            return self
-        else:
-            return Rate(0)
-
-
-    def __repr__(self):
-        return '%s(%r, %r)' % (type(self).__name__, self.numerator, self.denominator)
-
-    @classmethod
-    def as_fraction(cls, rate):
-        '''return a fraction created out of a rate instance'''
-        return fractions.Fraction(rate.numerator, rate.denominator)
 
 
 Line = collections.namedtuple('Line', ['lineno'])
