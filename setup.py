@@ -4,7 +4,7 @@ from setuptools import setup
 import glob, os
 
 setup(name='moncov',
-    version='0.5.15',
+    version='0.5.16',
     description='Python remote code coverage using Redis',
     author='Vitaly Kuznetsov',
     author_email='vitty@redhat.com',

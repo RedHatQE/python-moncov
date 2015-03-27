@@ -1,5 +1,5 @@
 Name:		python-moncov
-Version:	0.5.15
+Version:	0.5.16
 Release:	1%{?dist}
 Summary:	Python code coverage using Redis
 
@@ -58,6 +58,10 @@ fi
 %{_bindir}/moncov
 
 %changelog
+* Fri Mar 27 2015 dparalen <vetrisko@gmail.com> 0.5.16-1
+- introducing mountpoints (vetrisko@gmail.com)
+- fix: missing method referenced from cobertura.py (vetrisko@gmail.com)
+
 * Mon Mar 16 2015 dparalen <vetrisko@gmail.com> 0.5.15-1
 - removing mongo references (vetrisko@gmail.com)
 - fix: missing super call (vetrisko@gmail.com)
