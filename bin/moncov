@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 __requires__ = ['moncov > 0.1']
-
 import moncov; moncov.ctl.disable()
+import pdb
 import aaargh
+import os
 import re
 import argparse
 import sys
@@ -100,19 +101,19 @@ def simple_xml(dbhost, dbport, dbname, whitelist, blacklist, output):
 @app.cmd_arg('--rcfile', help='coverage rc file to use')
 @app.cmd_arg('--pylib', help='include pylib', action='store_true')
 @app.cmd_arg('--debug', help='coveragepy debug options')
+@app.cmd_arg('--root', help='use alternative root path', default=os.path.sep)
+@app.cmd_arg('--mountpoints', help='set additional mount points to consider as roots', metavar='PATH1,PATH2...', nargs='+', default=[])
 @app.cmd_arg('--ned-version', help='show coveragepy version', action='store_true')
 @catching
 def ned(dbhost, dbport, dbname, output, omit, include, source, morfs, ignore_errors, report, xml, html, fail_under,
-        directory, annotate, show_missing, title, rcfile, pylib, debug, ned_version):
+        directory, annotate, show_missing, title, rcfile, pylib, debug, root, mountpoints, ned_version):
     '''call monkey-patched coveragepy reports'''
     import coverage
 
     if ned_version:
         print coverage.__version__
         return 0
-
-    moncov.monkey.patch_coveragepy(dbhost=dbhost, dbport=dbport, dbname=dbname)
-
+    moncov.monkey.patch_coveragepy(dbhost=dbhost, dbport=dbport, dbname=dbname, root=root, mountpoints=mountpoints)
     # process list options
     source = coverage.cmdline.unshell_list(source)
     include = coverage.cmdline.unshell_list(include)
